@@ -1,0 +1,244 @@
+{
+  "name": "User feedback form agent",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "User feedback form",
+        "formDescription": "User feedback form",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full name",
+              "placeholder": "Type your full name....",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email address",
+              "placeholder": "Enter your correct email....",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Contact info",
+              "fieldType": "number",
+              "placeholder": "Type your working number....",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Feedback",
+              "placeholder": "Type your feedback here....",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -500,
+        -340
+      ],
+      "id": "98bfdeb4-5a6b-4948-a5d5-5e2cfb0d8b58",
+      "name": "On form submission",
+      "webhookId": "9012ac90-0092-4a86-a7c5-42aad8d41bd3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Your role is to determine if the feedback filled by the customer is a complain, a compliment, or a feature addition request.\nThe feedback is {{ $json.Feedback }}\n\nYour response should be only from the below\n1: Complain\n2: Compliment\n3: Feature addition request",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        -215
+      ],
+      "id": "109674ee-7c74-48df-8161-821bef2b25ae",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        0
+      ],
+      "id": "82407a9a-2fd8-4b2a-ad00-9311fb884480",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ikowt67IH3BSlSWK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        96,
+        -340
+      ],
+      "id": "5da06248-b589-411d-860a-e15dfb762510",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "Compliment",
+                    "rightValue": "={{ $json.output }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0b2b825a-35c3-48fb-b24b-5e317d378fd7"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3845735a-3bb3-45e5-a9ad-968684a048ac",
+                    "leftValue": "Complain ",
+                    "rightValue": "={{ $json.output }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "94f3db60-1264-473d-94bb-9c4710c7f28c",
+                    "leftValue": "Feature addition request",
+                    "rightValue": "={{ $json.output }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        316,
+        -340
+      ],
+      "id": "bc8c8fd7-9d00-4283-ae22-29d97dc023ed",
+      "name": "Switch"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "63ee9dd0-572c-4bc5-ae31-1149ae0d57ef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6118f98afadc52aacaeff4eab8ed70dd1b090d08eef6ce3a082128d01a3bf381"
+  },
+  "id": "F9P74ZIRSk4bHXba",
+  "tags": []
+}

@@ -1,0 +1,1222 @@
+{
+  "name": "Harcourt Dental clinic Agent backend Inbound very imp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "n8nn112",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1264,
+        144
+      ],
+      "id": "45a1a2b5-94fb-4014-af16-e9147dac6edf",
+      "name": "Job Creation",
+      "webhookId": "9dfc3c1d-9d99-4041-9cae-3a60cc86652d"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0",
+          "mode": "list",
+          "cachedResultName": "Dental clinic data after call",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full name": "={{ $json.body.args.name }}",
+            "Phone number": "={{ $json.body.args.phone_number }}",
+            "Preferred time": "={{ $json.body.args.preferred_time }}",
+            "Email": "={{ $json.body.args.email }}",
+            "Reason for vist": "={{ $json.body.args.reason_for_visit }}",
+            "Insurance": "={{ $json.body.args.Insurance }}"
+          },
+          "matchingColumns": [
+            "phone_number"
+          ],
+          "schema": [
+            {
+              "id": "Full name",
+              "displayName": "Full name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reason for vist",
+              "displayName": "Reason for vist",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferred time",
+              "displayName": "Preferred time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Insurance",
+              "displayName": "Insurance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1072,
+        144
+      ],
+      "id": "77de142c-2920-4cf8-bb04-15d72fcef319",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8qi7aKMCQ9gTegvH",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=A new appointment has been booked. Please review the customer details below so we can prepare accordingly: Make output from the below details.\n\nFull Name: {{ $json[\"Full name\"] }}\n\nPhone Number: {{ $json[\"Phone number\"] }}\n\nEmail: {{ $json.Email }}\n\nBooked Time:{{ $json['Preferred time'] }}\n\nReason for visit:{{ $json['Reason for vist'] }}\n\nInsurance: {{ $json.Insurance }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        144
+      ],
+      "id": "21f73610-158c-468d-8954-26868829a2f8",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "content": "## Log the emergency case\nAfter logging the emergency to the sheet, send an email to the business. \n",
+        "height": 540,
+        "width": 1360
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        640
+      ],
+      "id": "a9f710e8-ab41-4ce4-a803-7069391ebfd3",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Create a new Appointment\nAfter creating a new appointment, send an SMS message to confirm the appointment.\n\n",
+        "height": 540,
+        "width": 1192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        64
+      ],
+      "id": "21da50b0-5639-407b-a801-a2124f2feca5",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "sendTo": "=voiceonic@gmail.com",
+        "subject": "New appointment is booked",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        144
+      ],
+      "id": "80e4acc0-0e24-434b-b374-cead9b1a71aa",
+      "name": "Send a message2",
+      "webhookId": "aa4240d8-c6f6-4e6d-a6bd-cb954ea80928",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1VH4KDQkRq8aEPJN",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        352
+      ],
+      "id": "fc75fa9b-f1de-42d1-ac68-5133fbfed0c1",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jWwjy9cxoi7lWSe1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "emer",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1248,
+        848
+      ],
+      "id": "554c3a8d-aab5-4371-a01b-cfa07869f7c9",
+      "name": "Log Emergency1",
+      "webhookId": "e5563a13-1323-4109-ae88-5e87b8d48d3c"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0",
+          "mode": "list",
+          "cachedResultName": "Dental clinic data after call",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 370113487,
+          "mode": "list",
+          "cachedResultName": "Emergency log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit#gid=370113487"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full name": "={{ $json.body.args.name }}",
+            "Phone number": "={{ $json.body.args.phone_number }}",
+            "Emergency details": "={{ $json.body.args.emergency_details }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Full name",
+              "displayName": "Full name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Emergency details",
+              "displayName": "Emergency details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1040,
+        848
+      ],
+      "id": "ca606b44-f897-433d-b2b5-69ebd3081bcf",
+      "name": "Append row in Emergency1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8qi7aKMCQ9gTegvH",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        1024
+      ],
+      "id": "fe6679b8-4e60-41bb-a8c5-17e2617e2a5f",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jWwjy9cxoi7lWSe1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Define the HTML email content with styles, without any leading sentences for that message. Make sure that the response is in a valid HTML format, start with <!DOCTYPE html>, without any wrapper (e.g. \\`\\`\\` or \\`\\`\\`html)\n\n\nFull name: {{ $('Append row in Emergency1').item.json[\"Full name\"] }}\nPhone number: {{ $('Append row in Emergency1').item.json[\"Phone number\"] }}\nInquiry details:{{ $json['Emergency details'] }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        848
+      ],
+      "id": "e90ea63a-76a7-42f0-9c3e-187ca991e8f4",
+      "name": "AI Agent4"
+    },
+    {
+      "parameters": {
+        "sendTo": "=voiceonic@gmail.com",
+        "subject": "Emergency case",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        848
+      ],
+      "id": "442a5e61-49fe-457b-a01d-916e3093ca88",
+      "name": "Send a message3",
+      "webhookId": "aa4240d8-c6f6-4e6d-a6bd-cb954ea80928",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1VH4KDQkRq8aEPJN",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -480
+      ],
+      "id": "0e8c3f69-a3b6-4324-85db-cf69a59a80ad",
+      "name": "Webhook",
+      "webhookId": "b0399368-6d2f-43fb-962d-165e0bdb754f"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', ``, 'string') }}"
+          ],
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        -272
+      ],
+      "id": "58c9e809-ba54-4005-9d57-82f19f203e60",
+      "name": "Book Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KHDzH0WaJhxrQaiC",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        -240
+      ],
+      "id": "a51fc2e2-123a-46bf-a559-b2827b38502d",
+      "name": "Get Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KHDzH0WaJhxrQaiC",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "eventId": "={{ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        -256
+      ],
+      "id": "04157469-db35-4b32-9ed8-86a4a08f5ffc",
+      "name": "Cancel Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KHDzH0WaJhxrQaiC",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "updateFields": {
+          "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+          "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        -272
+      ],
+      "id": "609e6f3f-c6c1-4fdf-ba15-37259a950beb",
+      "name": "Update Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KHDzH0WaJhxrQaiC",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        -480
+      ],
+      "id": "bf1b9210-aeaf-48db-b9e7-d84575fa784e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start_Time', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End_Time', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        -240
+      ],
+      "id": "49161c6a-3a41-48c2-b4cd-e08cf6023c21",
+      "name": "Check Availability",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KHDzH0WaJhxrQaiC",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\nYou are an AI Scheduling Assistant with access to Google Calendar. Your job is to book, reschedule, or cancel appointments according to the instructions and variables provided.\n\n# Tools Available\n- Book Appointment: Book a new appointment\n- Get appointment: Retrieve an appointment (find by time)\n- Update appointment: Reschedule an appointment (find by time, update to new time)\n- Cancel appointment: Cancel an appointment (find by time, cancel)\n- Check Availability: Check availability in given time frame\n\n# Variables Provided\n- action: \"booking\", \"reschedule\", \"check availability\", or \"cancel\"\n\n- booking_time: The time for booking, cancellation, or the original time to be rescheduled (format: ISO 8601 or standard calendar time)\n\n- reschedule_time: The new time to reschedule to (only present if action = \"reschedule\")\n\n- availability_time: The time or time range to check for availability (only present if action = \"check availability\")\n\n\n# Context\nThe lead's request:\n- Action: {{ $json.body.args.action }}\n- Booking Time: {{ $json.body.args.booking_time }} \n- CAncel time:  {{ $json.body.args.booking_time }}\n- Reschedule Time: {{ $json.body.args.reschedule_time }}\n- Availability: {{ $json.body.args.availability_time }}\n\nLead Details:\n- Name: {{ $json.body.args.name }}\n- Phone Number: {{ $json.body.args.phone }}\n\n# Instructions\n\n1. **If `action` is \"check availability\":**\n   - Use `Check Availability` for the provided `availability_time`.\n   - Report clearly whether the slot or range is available or not. If they asked what times are available, provide two time ranges at different parts of the day, closest times possible. Eg, Monday between 10am and 1pm or Tuesday between 1pm and 4pm.\n\n2. **If `action` is \"booking\":**\n   - Use `Check Availability` for the requested `booking_time`.\n   - If available, use `Book Appointment` to book an appointment by using these details {{ $json.body.args.name }} {{ $json.body.args.phone }}\n   - If not available, report: \"The requested time is not available. Please choose another time.\"\n\n3. **If `action` is \"cancel\":**\n   - Use **Get Appointment** to find the appointment time.\n   - If found, use `Cancel Appointment` by using this time to cancel that appointment.\n   - If not found, report: \"No appointment found at the specified time to cancel.\"\n\n4. **If `action` is \"reschedule\":**\n   - Use Get 'Appointment' to find the appointment at `booking_time`.\n   - If found, use `Check Availability` for the desired `reschedule_time`.\n   - If the new time is available, use `Update Appointment` to move the appointment to `reschedule_time`.\n   - If not available, report: \"The requested reschedule time is not available. Please choose another time.\"\n   - If original appointment not found, report: \"No appointment found at the specified time to reschedule.\"\n\n# Output\nAlways confirm the result of your action:\n- For bookings: \"Appointment successfully booked at [time].\"\n- For cancellations: \"Appointment at [time] cancelled.\"\n- For rescheduling: \"Appointment rescheduled from [booking_time] to [reschedule_time].\"\n- For errors: \"No appointment found at [booking_time] to [action].\"\n- For availability: \"The time slot at [availability_time] is available.\" or \"The time slot at [availability_time] is not available.\"\n\n# Example Inputs & Expected Flows\n\n## Check Availability Example\n- action: \"check availability\"\n- availability_time: \"2025-05-23T10:00:00\"\n→ Check if 10:00 AM is free, report result.\n\n## Book Example\n- action: \"booking\"\n- booking_time: \"2025-05-23T10:00:00\"\n→ Check availability, if available, book at 10:00 AM, confirm.\n\n## Cancel Example\n- action: \"cancel\"\n- Use **Get Appointment** to find the appointment time.\n- If found, use `Cancel Appointment` by using this time to cancel that appointment.\n- booking_time: \"{{ $json.body.args.booking_time }} \"\n→ Find appointment at 10:00 AM, cancel if found, confirm.\n\n## Reschedule Example\n- action: \"reschedule\"\n- booking_time: \"2025-05-23T10:00:00\"\n- reschedule_time: \"2025-05-23T11:30:00\" (if not provided, default check within next 3 days)\n→ Find appointment at 10:00 AM, check availability at 11:30 AM, if free, move to 11:30 AM, confirm.\n\n\n# Tone\nKeep instructions, confirmations, and error messages clear and direct.\n\n# Notes\n- Default duration: 30 minutes.\n- Only check availability within the next 3 days unless otherwise stated.\n- Never cancel or update unless appointment is confirmed to exist.\n- All timezones use **PKT (UTC+5, Asia/Karachi)**.\n- For automation in n8n, ensure:\n  - Each Google Calendar node receives a `datetime` string in **ISO 8601 (YYYY-MM-DDTHH:mm:ss+05:00)**.\n  - Use `Convert Timezone` node before booking/cancel actions if user time is in another zone.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        320,
+        -480
+      ],
+      "id": "c162422a-123e-401f-923f-6d424ac80b0f",
+      "name": "AI Agent5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -288
+      ],
+      "id": "21d9f423-8c86-4eb4-97b4-c0d7ca9e28df",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jWwjy9cxoi7lWSe1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Appointment agent",
+        "height": 544,
+        "width": 1184,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -144,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "ea2cc200-0f86-42ea-9d2d-fac511c40f53",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resch",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1312,
+        -352
+      ],
+      "id": "d0e92659-1083-4d7c-9d81-2123b0c9e022",
+      "name": "Webhook1",
+      "webhookId": "fb0b6adb-cc82-42d7-9450-15c64cb17e78"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0",
+          "mode": "list",
+          "cachedResultName": "Dental clinic data after call",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 445800934,
+          "mode": "list",
+          "cachedResultName": "Reschedule data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit#gid=445800934"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full name": "={{ $json.body.args.name }}",
+            "Phone number": "={{ $json.body.args.phone_number }}",
+            "Old date and time": "={{ $json.body.args.old_date_time }}",
+            "New date and time": "={{ $json.body.args.new_date_time }}"
+          },
+          "matchingColumns": [
+            "phone_number"
+          ],
+          "schema": [
+            {
+              "id": "Full name",
+              "displayName": "Full name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Old date and time",
+              "displayName": "Old date and time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "New date and time",
+              "displayName": "New date and time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1120,
+        -352
+      ],
+      "id": "c1ebd9b0-ec09-4b47-b290-8b397dad888a",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8qi7aKMCQ9gTegvH",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Appointment Rescheduled from the customer. Please review the customer details below so we can prepare accordingly: Make output from the below details.\n\nFull Name: {{ $json[\"Full name\"] }}\n\nPhone number: {{ $json['Phone number'] }}\n\nOld date and time: {{ $json['Old date and time'] }}\n\nNew date and time: {{ $json['New date and time'] }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        -384
+      ],
+      "id": "53d8b3bf-9531-4378-9586-63b2cfb99694",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -192
+      ],
+      "id": "b29bce91-f510-40bd-b81a-29b59fa49bbe",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jWwjy9cxoi7lWSe1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=voiceonic@gmail.com",
+        "subject": "Appointment is rescheduled",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -608,
+        -384
+      ],
+      "id": "06ec733a-2c66-4976-a5ab-3c3a2651b30b",
+      "name": "Send a message",
+      "webhookId": "aa4240d8-c6f6-4e6d-a6bd-cb954ea80928",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1VH4KDQkRq8aEPJN",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Log reschedule case",
+        "height": 496,
+        "width": 1104
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1360,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "0cda0558-591e-402d-983d-0efb854c1bfa",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "can",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1344,
+        -912
+      ],
+      "id": "8035f45b-26a3-4d67-b52d-65f9a8f4350c",
+      "name": "Webhook2",
+      "webhookId": "fb0b6adb-cc82-42d7-9450-15c64cb17e78"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0",
+          "mode": "list",
+          "cachedResultName": "Dental clinic data after call",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1599624254,
+          "mode": "list",
+          "cachedResultName": "Cncellation data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15fQUQ2PF64ktjtZV68uo6n5Sla67hnbCj52PeUwRMe0/edit#gid=1599624254"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full name": "={{ $json.body.args.name }}",
+            "Phone number": "={{ $json.body.args.phone_number }}",
+            "Cancellation date and time": "={{ $json.body.args.cancel_date_time }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Full name",
+              "displayName": "Full name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cancellation date and time",
+              "displayName": "Cancellation date and time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1152,
+        -912
+      ],
+      "id": "b79956bc-12f6-4d2f-b624-a1dc4e07da32",
+      "name": "Append row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8qi7aKMCQ9gTegvH",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Appointment cancelled from the customer. Please review the customer details below so we can prepare accordingly: Make output from the below details.\n\nFull Name: {{ $json[\"Full name\"] }}\n\nPhone number: {{ $json['Phone number'] }}\n\nCancellation date and time: {{ $json['Cancellation date and time'] }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        -944
+      ],
+      "id": "ea58535e-d751-4326-b82b-d5d0f03c296d",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        -752
+      ],
+      "id": "3c63554d-42d4-495f-a963-100e699b7a44",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jWwjy9cxoi7lWSe1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=voiceonic@gmail.com",
+        "subject": "Appointment is Cancelled",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -640,
+        -944
+      ],
+      "id": "75698961-4361-4634-b4da-c7ad32dd812e",
+      "name": "Send a message1",
+      "webhookId": "aa4240d8-c6f6-4e6d-a6bd-cb954ea80928",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1VH4KDQkRq8aEPJN",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Log cancellation data",
+        "height": 496,
+        "width": 1104
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1360,
+        -1056
+      ],
+      "typeVersion": 1,
+      "id": "da55766b-d1f5-40c7-80b0-cec8363b34f2",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Job Creation": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Emergency1": {
+      "main": [
+        [
+          {
+            "node": "Append row in Emergency1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in Emergency1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent4": {
+      "main": [
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent5": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4997bded-80cc-44cd-bccd-8cf70bfd41b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8025e24eabf7dd73a175855fafcd989b775beb18ce8d034a97407cdf39950643"
+  },
+  "id": "tnpeEOx5EEtdOC9g",
+  "tags": []
+}

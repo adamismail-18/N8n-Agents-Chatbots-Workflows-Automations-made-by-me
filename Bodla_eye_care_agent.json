@@ -1,0 +1,526 @@
+{
+  "name": "Bodla_eye_care_agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        1080
+      ],
+      "id": "9fbd425a-c93a-455c-b850-d1d153ce4781",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "bodlaeyecareclinic",
+        "toolDescription": "You are an AI assistant for Bodla EyeCare Clinic, Multan.\n\nYou only answer questions based on the provided documents (retrieved from the clinic database).  \nDo not guess or use outside knowledge.  \nIf the answer is not found in the documents, politely reply:  \n\"I'm sorry, this information is not available at the moment.\"\n\nAlways use clear, simple language suitable for Pakistani patients.  \nBe helpful, friendly, and professional.\n\nIf the user asks about:\n\n- Clinic services\n- Doctor qualifications\n- Clinic address\n- Contact numbers\n- Clinic timings\n- Payment methods\n- Appointment process\n- Facilities (such as parking)\n- Child eye care\n- Insurance acceptance\n- Any other clinic-related question\n\nThen:  \n1️⃣ Retrieve accurate information from the provided documents.  \n2️⃣ Present the answer clearly and politely.  \n3️⃣ Do not invent any extra details.  \n4️⃣ If the answer is not in the documents — say so politely.\n\nYou represent Bodla EyeCare Clinic — always act in a professional and caring way.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "bodlaeyecareclinic",
+          "mode": "list",
+          "cachedResultName": "bodlaeyecareclinic"
+        },
+        "topK": 7,
+        "includeDocumentMetadata": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        1082.5
+      ],
+      "id": "1d8c618e-39be-4055-861e-247115f5f54a",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "zahnYkXLAfQj3ceo",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1380,
+        1220
+      ],
+      "id": "5feba10b-4bb3-4327-9090-b9c7285ff956",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "XfcQJ3wZJJmdQ2T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1080,
+        1080
+      ],
+      "id": "c80f9676-4930-4405-82f6-c3d4b8990d64",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XfcQJ3wZJJmdQ2T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {
+          "timeZone": {
+            "__rl": true,
+            "value": "Asia/Karachi",
+            "mode": "list",
+            "cachedResultName": "Asia/Karachi"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1616,
+        1080
+      ],
+      "id": "9628d15c-8d97-492f-b932-b33be6964847",
+      "name": "Read",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "9csSb6J7x4Fn12Pw",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1736,
+        1080
+      ],
+      "id": "d4c00982-1cf9-42ca-b3cb-7dfcbc9d362d",
+      "name": "Create",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "9csSb6J7x4Fn12Pw",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1856,
+        1080
+      ],
+      "id": "0f12f111-6844-49d9-8a68-b8ea42d2fe1a",
+      "name": "Delete",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "9csSb6J7x4Fn12Pw",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        1300,
+        860
+      ],
+      "id": "567612ab-3744-4b82-a1ec-4722c46db1e3",
+      "name": "When chat message received",
+      "webhookId": "288eab13-a612-4499-8623-2d9811fd5bb2"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YKDJZgI7PaIAf_RpGvIIKVjXAx0YqCE3KpwVWuNh4w4",
+          "mode": "list",
+          "cachedResultName": " TEMPLATE WhatsApp AI Agent Appointment Setter  - FabiMarkl.com",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YKDJZgI7PaIAf_RpGvIIKVjXAx0YqCE3KpwVWuNh4w4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 689245338,
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YKDJZgI7PaIAf_RpGvIIKVjXAx0YqCE3KpwVWuNh4w4/edit#gid=689245338"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone": "={{ $fromAI(\"phone\",\"the phone number that the user tells you\") }}",
+            "Name": "={{ $fromAI(\"name\",\"the name of the user\") }}",
+            "Appointment Date": "={{ $fromAI(\"date\",\"the appointment date and time converted to Pakistan Time that the user confirmed as his appointment\") }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Appointment Date",
+              "displayName": "Appointment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1976,
+        1080
+      ],
+      "id": "0fb587a9-77eb-4eaa-a8ef-8c61cd411360",
+      "name": "Add rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MRRI1ycvxJTN2Z9R",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an Appointment Scheduling Assistant for Bodla EyeCare Clinic, Multan.\n\nUser message here: {{ $json.chatInput }}\n\n🎯 GOAL:\n- Answer patient questions (FAQs) in Roman Urdu — polite, friendly and human tone  \n- Help them find free appointment slots when asked  \n- Collect patient Name and Phone Number — to save in Google Sheets  \n- Confirm user details after collecting — and confirm booking  \n- Keep replies short and helpful\n\n📝 INSTRUCTIONS:  \n- When user ask about How many dr are there in clinic then reply them with the detail of two doctors 1 Dr Afzal Bodla and 2 Dr Ali Afzal Bodla  \n- Always reply in **Roman Urdu** — simple language suitable for Pakistani patients  \n- Always be polite and friendly — act like a caring human clinic staff member  \n- If patient sends **ONLY a greeting** (example: \"Aoa\", \"Hello\", \"Hi\", \"Salam\") → reply with polite greeting:  \n    `\"Assalam o Alaikum! Aap kis cheez mein madad chahtay hain?\"`  \n- BUT:  \nIf patient sends **any actual question** (for example: about timings, services, fees, doctor, appointment) — answer directly — do NOT send greeting only.\n\n📅 GOOGLE CALENDAR INSTRUCTIONS:  \n- Use Google Calendar tool to handle all appointment operations:\n    - **Create** appointment after collecting all details from patient  \n    - **Read** available slots based on patient’s preferred day/time  \n    - **Reschedule** if patient asks to change day/time after booking  \n    - **Delete** appointment if patient cancels by going to delete calendar event\n- Always confirm patient’s choice before creating or modifying appointment  \n- Format: `Date`, `Time`, `Name`, `Phone Number` — use these to create or modify calendar events \n\n- Remember the very important thing is to read calendar before asking user to book an appointment when user provide details then check read calendar after that book appointment by create event on google calendar\n\n🗑️ For rescheduling or deleting:\n- First find the original event in the calendar using patient's name and phone number.\n- Then return the exact `eventId` of that appointment.\n- For **delete**, only return:\n{\n  \"eventId\": \"[Exact Event ID to delete]\"\n}\n- For **reschedule**, return:\n{\n  \"eventId\": \"[Exact Event ID]\",\n  \"startTime\": \"2025-06-30T11:00:00+05:00\",\n  \"endTime\": \"2025-06-30T11:15:00+05:00\",\n\n- If requested slot is already taken — suggest next free slot from calendar  \n\nThe current time and date is thr following PAkistani time zone {{ $now }}\n\n⏰ IMPORTANT: Always return the following structured JSON for appointment booking:\n\n{\n  \"name\": \"[Patient Full Name]\",\n  \"phone\": \"[Phone Number]\",\n  \"startTime\": \"2025-06-30T11:00:00+05:00\",\n  \"endTime\":  \"2025-06-30T11:15:00+05:00\",\n  \"title\": \"Eye Checkup Appointment\",\n  \"description\": \"Name: [Patient Full Name], Phone: [Phone Number], Service: Eye Checkup\"\n}\n\n✅ Make sure time is always in ISO 8601 format with +05:00 offset (Pakistan Time)\n❌ Do not return only chatInput\n✅ Always return each of these fields directly, so the calendar can use them\n\nFor rescheduling:\n- Always return eventId (from earlier booking)\n- Return new startTime and endTime in ISO format with +05:00 offset\n\nThere are also several Google Sheet tools:\n- \"Google Sheet - Add Row\": allows you to add new rows to a Google\nSheet\n- \"Google Sheet - Update Row\": allows you to update rows in a\nGoogle Sheet\n- \"Google Sheet - Read\": allows you to read content of the Google\nSheet\n\n📆 Appointment Flow (when asked about appointment):  \n    1️⃣ Ask for preferred date or day  \n    2️⃣ Preferred time (morning/afternoon/evening)  \n    3️⃣ Full name  \n    4️⃣ Phone number  \n→ Then use Google Calendar tool to check availability and **create the event**\n\n✅ After successful booking, confirm like this:  \n`\"Shukriya! Aap ka appointment book kar diya gaya hai. Tafseelaat: [Date/Day], [Time], Naam: [Name], Number: [Phone number].\"`\n\n📉 If patient asks to cancel or change appointment:  \n→ Use Google Calendar tool to **delete** or **reschedule**  \n→ Confirm the new status with the patient\n\n💵 If patient asks about **doctor’s fees**:  \n    → The fee for checkup is **Rs. 2000**  \n    → If patient requests for lower fee / discount:  \n        → Reply politely that it cannot be lowered — we provide the best quality service\n\n❓ If patient asks any FAQ (services, timings, doctor name, fees, parking, insurance etc.) — answer from available data  \n\n⛔ Do not invent or guess any information — only use correct clinic data  \n❓ If you do not know the answer — politely say:  \n    `\"Maazrat chahta hoon, is waqt yeh maloomat dastiyab nahi hai.\"`\n\n🗣️ Keep replies short — maximum 2–3 sentences\n\n📢 Example tone:  \n`\"Assalam o Alaikum! Meherbani farmaiyein, aap kis cheez mein madad chahtay hain?\"`",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1528,
+        860
+      ],
+      "id": "0a75060b-4efc-4564-b676-0db5a53e7dcc",
+      "name": "Eye_care_agent"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "7fa5b911-c1ce-45b6-932b-077872945204",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "adamsandhu16@gmail.com",
+          "mode": "list",
+          "cachedResultName": "adamsandhu16@gmail.com"
+        },
+        "options": {}
+      },
+      "id": "262c97ca-f077-4a0c-8888-2db420455635",
+      "name": "Get Today Appointments",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        680
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "9csSb6J7x4Fn12Pw",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const timezone = 'Asia/Karachi';\nconst now = new Date().toLocaleDateString('en-CA', { timeZone: timezone });\n\nconst appointments = items\n  .map(item => item.json)\n  .filter(event => {\n    const start = event.start?.dateTime || event.start?.date;\n    if (!start) return false;\n    const eventDate = new Date(start).toLocaleDateString('en-CA', { timeZone: timezone });\n    return eventDate === now;\n  })\n  .map((event, index) => {\n    const summary = event.summary || 'Unknown';\n    const time = new Date(event.start.dateTime || event.start.date).toLocaleTimeString('en-US', {\n      timeZone: timezone,\n      hour: 'numeric',\n      minute: '2-digit',\n      hour12: true,\n    });\n\n    const phoneMatch = event.description?.match(/Phone[:：]?\\s*([\\d\\-+]+)/i);\n    const phone = phoneMatch ? phoneMatch[1] : 'No phone';\n\n    return `${index + 1}. 👤 ${summary}\\n🕒 ${time}\\n📞 ${phone}`;\n  });\n\nreturn [\n  {\n    json: {\n      message:\n        appointments.length > 0\n          ? `📋 Aaj ke appointments:\\n\\n${appointments.join('\\n\\n')}\\n\\nShukriya,\\nBodla AI Assistant`\n          : `📋 Aaj ke appointments:\\n\\nKoi appointment nahi mili.\\n\\nShukriya,\\nBodla AI Assistant`,\n    },\n  },\n];\n"
+      },
+      "id": "418f8078-40d7-4b71-b54c-cffccf547fd1",
+      "name": "Format Message",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "adamsandhu16@gmail.com",
+        "subject": "Bodla Clinic - Aaj ki Appointments",
+        "message": "={{ $json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1680,
+        680
+      ],
+      "id": "2ca24981-2a41-4a09-9fc8-2c20df2335a6",
+      "name": "Send a message",
+      "webhookId": "63f007d1-7fbb-4349-88c6-d185d164151b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BJG6fLSWrTPKgIGy",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read": {
+      "ai_tool": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create": {
+      "ai_tool": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete": {
+      "ai_tool": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Eye_care_agent": {
+      "main": [
+        []
+      ]
+    },
+    "Add rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "Eye_care_agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Today Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today Appointments": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c9bb634f-f66a-4d80-b97f-fe254d9746ea",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4a4d80652e161cddebda97dfcaa3a51c51f945330e1116cb985a16d6ad7a97eb"
+  },
+  "id": "ocghwZLl7O7h2gwU",
+  "tags": []
+}

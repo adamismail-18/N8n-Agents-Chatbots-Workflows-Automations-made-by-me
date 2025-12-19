@@ -1,0 +1,451 @@
+{
+  "name": "Customer extraction agent",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAllPeople"
+      },
+      "type": "n8n-nodes-base.n8nTrainingCustomerDatastore",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -1840
+      ],
+      "id": "81a533d6-6b01-4aa6-ab18-1af8bd89df23",
+      "name": "Customer Datastore (n8n training)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -1840
+      ],
+      "id": "484bd1e0-14bd-42be-bf8e-560140f2bdc5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1275b08c-59b2-4f73-b8d3-44f6785aee29",
+              "name": "Full name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "ad5f7b14-1881-487a-8e9b-7e0f276a5538",
+              "name": "Email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "9b3a3f2a-0837-4d8b-a115-3d4296e4e7c6",
+              "name": "Country",
+              "value": "={{ $json.country }}",
+              "type": "string"
+            },
+            {
+              "id": "f26fd1a9-20fa-4e6e-86ee-0a7a6c6b8602",
+              "name": "ID",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        -2580
+      ],
+      "id": "bb65c7c6-a707-490c-96c1-beaf889e18ca",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1d48e073-ccd3-4cff-bd78-72cfe21c9228",
+              "leftValue": "={{ $json.Country }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -2680
+      ],
+      "id": "3c9b893f-a09b-4523-aad8-46fe27f2502a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1bed6d8-8658-4d5b-ace6-976c4430be89",
+              "name": "Name",
+              "value": "={{ $json['Full name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a7e292ff-3916-444b-872e-05d99ac03c80",
+              "name": "Email",
+              "value": "={{ $json.Email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1300,
+        -2720
+      ],
+      "id": "d692cce2-e82d-4492-b2ac-5c85747f0dac",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "15885a9e-dfe6-4965-a6e2-7cc0a9f0d61e",
+              "name": "Country",
+              "value": "={{ $json.ID }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1300,
+        -2540
+      ],
+      "id": "79bab4db-26fb-4936-8832-8ec7f80a005f",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1dvqV8jPRn0Y1hBGUnxadJgd3mEzf1CEHJcwsfLYt7co",
+          "mode": "list",
+          "cachedResultName": "TEST N8n Customer Data ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dvqV8jPRn0Y1hBGUnxadJgd3mEzf1CEHJcwsfLYt7co/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1899898555,
+          "mode": "list",
+          "cachedResultName": "MOCK_DATA",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dvqV8jPRn0Y1hBGUnxadJgd3mEzf1CEHJcwsfLYt7co/edit#gid=1899898555"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        440,
+        -1840
+      ],
+      "id": "12aa3e94-8082-411a-ade7-7cbde413fe7f",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3hZpG7wTCDi28EAL",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6089b1d4-426d-4f63-88d4-b4c24513ddd9",
+              "name": "Full name",
+              "value": "={{ $json.first_name }}{{ $json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "73245278-dd7e-474f-b93a-91a493022e2a",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "997211f1-d4dd-46f8-a01b-1b90d3098bb0",
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "e4f9d59f-501e-49ec-8daf-47af9acbee1a",
+              "name": "country",
+              "value": "={{ $json.country }}",
+              "type": "string"
+            },
+            {
+              "id": "f42f31ad-c750-4882-928e-14f92d7a1334",
+              "name": "customer_id",
+              "value": "={{ $json.customer_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        -1840
+      ],
+      "id": "ee3f82b2-3744-40c7-b5a5-41a086a22322",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "66c28afc-a461-4aac-9728-fd8da14eb04f",
+              "leftValue": "={{ $('Google Sheets').item.json.country }}",
+              "rightValue": "China",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -1840
+      ],
+      "id": "016a4930-2f74-47f6-b95e-6adb6c6da22c",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "38195294-1d10-4d92-9313-69bc22d7a147",
+              "name": "Full name",
+              "value": "={{ $json['Full name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "508d197e-2460-410c-a92b-b1523ffa137f",
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "c9b5824f-9d80-4e85-aaf7-856ad4f1e014",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        -1940
+      ],
+      "id": "dbf956e1-784d-41a1-8e7a-df72b3d3990b",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "38195294-1d10-4d92-9313-69bc22d7a147",
+              "name": "Full name",
+              "value": "={{ $json['Full name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "508d197e-2460-410c-a92b-b1523ffa137f",
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "c9b5824f-9d80-4e85-aaf7-856ad4f1e014",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "f4ea57e3-ad12-44a0-86e9-7afef3f4b99e",
+              "name": "country",
+              "value": "={{ $json.country }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        -1720
+      ],
+      "id": "de5c1b9b-0cd6-4d17-9d0d-1f0e8d2df438",
+      "name": "Edit Fields5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Customer Datastore (n8n training)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Datastore (n8n training)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "71cbf921-27e0-4a81-9fbd-402cc58779a4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6118f98afadc52aacaeff4eab8ed70dd1b090d08eef6ce3a082128d01a3bf381"
+  },
+  "id": "Vh2b79qI71QvbSAY",
+  "tags": []
+}

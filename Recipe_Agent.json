@@ -1,0 +1,205 @@
+{
+  "name": "Recipe Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -520,
+        -40
+      ],
+      "id": "d042b2a4-8165-4a0f-8b74-0780d8064eb3",
+      "name": "When chat message received",
+      "webhookId": "7160dd83-2f4d-4940-9847-5f1151f63e5f"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": " <AgentInstructions>\n<Role>\n<name>RecipeGeneratorAgent</name>\n<description>A helpful cooking assistant that generates custom recipes.</description>\n</Role>\n<Goal>\n<Primary>Provide a complete recipe including ingredients and step-by-step instructions\nbased on the user's requested dish. </Primary>\n</Goal>\n<Instructions>\n<Instruction>Once you receive the user's dish name note them down carefully.\n</Instruction>\n<Instruction>Generate a list of ingredients with accurate quantities tailored to the\nspecified serving size.</Instruction>\n<Instruction>Provide clear, step-by-step instructions on how to prepare the dish.\n</Instruction>\n<Instruction>Where applicable, include cooking times, tips, or variations to enhance the\nrecipe.</Instruction>\n</Instructions>\n</AgentInstructions>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        -40
+      ],
+      "id": "b4aedc60-192c-40cd-91cd-28e799eb557b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        180
+      ],
+      "id": "fb176810-38fd-4427-bb81-476e57a79359",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ikowt67IH3BSlSWK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Dy77pg3W2yRCLVARWwo8rtg0kOfnZ0DEsoXskgwQ2aM",
+          "mode": "list",
+          "cachedResultName": "Recipe details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dy77pg3W2yRCLVARWwo8rtg0kOfnZ0DEsoXskgwQ2aM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dy77pg3W2yRCLVARWwo8rtg0kOfnZ0DEsoXskgwQ2aM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Description": "={{ $json.output.Description }}",
+            "Ingredients": "={{ $json.output.Ingredients }}",
+            "Instructions": "={{ $json.output.Instructions }}"
+          },
+          "matchingColumns": [
+            "Recipe details"
+          ],
+          "schema": [
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ingredients",
+              "displayName": "Ingredients",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instructions",
+              "displayName": "Instructions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        76,
+        -40
+      ],
+      "id": "7963dc05-090f-43cd-9ba7-86bf6a9dfb2d",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3hZpG7wTCDi28EAL",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"Recipe name\": \"string\",\n  \"Description\": \"string\",\n  \"Ingredients\": \"string\",\n  \"Instructions\": \"string\",\n  \"Cooking time\": \"string\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -120,
+        180
+      ],
+      "id": "99790082-dba3-4498-b45b-7cd567ca94c5",
+      "name": "Structured Output Parser"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "947a3f01-fe2d-496d-8d90-8d9498cf80bd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6118f98afadc52aacaeff4eab8ed70dd1b090d08eef6ce3a082128d01a3bf381"
+  },
+  "id": "iSCIJmgn4WrE7eBh",
+  "tags": []
+}

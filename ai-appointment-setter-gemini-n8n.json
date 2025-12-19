@@ -1,0 +1,102 @@
+{
+  "name": "AI Appointment Setter with Gemini and Memory",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "appointment",
+        "method": "POST",
+        "responseMode": "lastNode",
+        "responseData": "allEntries"
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "sessionId",
+              "value": "adam-session-1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Set Session ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sessionId": "sessionKey",
+        "sessionKey": "={{ $json.sessionId }}",
+        "maxContextItems": 5
+      },
+      "id": "3",
+      "name": "Simple Memory",
+      "type": "n8n-nodes-base.simpleMemory",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gemini-pro",
+        "prompt": "Extract appointment details from the following message and return JSON with: date, time, patient, contact, reason.\n\nMessage:\n{{ $json.chatInput }}",
+        "source": "fromParameter",
+        "temperature": 0.5
+      },
+      "id": "4",
+      "name": "Gemini AI Agent",
+      "type": "n8n-nodes-base.aiAgent",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ],
+      "credentials": {
+        "aiAgentApi": {
+          "id": "your-gemini-api-key-id",
+          "name": "Gemini"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          "2"
+        ]
+      ]
+    },
+    "Set Session ID": {
+      "main": [
+        [
+          "3"
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "main": [
+        [
+          "4"
+        ]
+      ]
+    }
+  }
+}

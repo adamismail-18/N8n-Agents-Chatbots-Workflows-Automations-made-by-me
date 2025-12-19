@@ -1,0 +1,2510 @@
+{
+  "name": "Appointment Setter & Get Slots",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ba221fe8-1285-4a12-9dd9-42aee2effbc8",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        -2480
+      ],
+      "id": "f818c31f-d395-44ec-b155-a209545bb257",
+      "name": "Webhook",
+      "webhookId": "ba221fe8-1285-4a12-9dd9-42aee2effbc8"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook').item.json.body.message.toolCalls[0].function.name }}",
+                    "rightValue": "booking",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "bd183285-1115-40ec-9042-d43144fc1cef"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Appointment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "39f192fa-acc9-4bb3-bd04-d7ddbb1000b6",
+                    "leftValue": "={{ $('Webhook').item.json.body.message.toolCalls[0].function.name }}",
+                    "rightValue": "Availability",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Free Slots"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        -2480
+      ],
+      "id": "16364214-db2f-4f20-a399-f53a20e3666a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "operation": "getFreeSlots",
+        "calendarId": "={{ $('GHL Calendar ID').item.json.ghlCalendarId }}",
+        "startDate": "={{ $json.startDate }}",
+        "endDate": "={{ $json.endDate }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        3632,
+        -2384
+      ],
+      "id": "da1cefc4-54cb-4ab1-9eaa-6a7dfe462772",
+      "name": "Get free slots of a calendar",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f4fcbedd-43e6-4c6e-a8f9-59044f708eab",
+              "leftValue": "={{ Object.values($json).some(d => d.slots && d.slots.length > 0) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3856,
+        -2384
+      ],
+      "id": "913f2724-aaba-436c-a88f-417dbf625753",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an Appointment Availability Assistant.\n\nYou will always receive:\n- A user’s request (what day they want to know the calendar availability for).\n- A list of available time slots for that day, or an indication that none exist.\n- if user requests a very specific timeslot and you don't see it as available, tell them that unfortunately it's not. If you see it available say that yes of course it is and if they'd like to book.\n\nYour job:\n1. Match the request to the **closest available slots** on that **same day**.  \n2. Return a maximum of **3 time slots**.  \n3. Speak naturally, e.g. “Yeah, I see we have a few slots available around [user's requested part of the day]. How about tomorrow at 10:30am or 2pm?”  \n4. Have great context on approximation of time and take into consideration the user's request. If the user requested a timeframe in the morning, that means give them a timeframe around 8AM-12:00PM, for afternoon, around 12:30PM-5:00PM, for evening around 5:30PM-9:00PM, or slots that are available the closest to these timeframes.\n5. Never output JSON. Respond in **natural, user-friendly language only**.\n6. You must not use escape characters like \\n, \\t, or markdown formatting. \nWrite your response as plain text, in complete sentences, as if you were speaking. \nDo not insert line breaks like this \\.\n",
+              "role": "system"
+            },
+            {
+              "content": "=User Request: {{ \n  (() => {\n    try {\n      return $('Booking Request Normalization').item.json.result;\n    } catch (e) {\n      try {\n        return $('Availability Request Normalization').item.json.result;\n      } catch (err) {\n        return '';\n      }\n    }\n  })() \n}}\nAvailable Slots: {{ JSON.stringify(Object.values($json)[0].slots, null, 2) }}\n\n"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        4080,
+        -2288
+      ],
+      "id": "e5365f9f-c1bf-4275-bc82-cd2334df3a8b",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "EQaaGsNzb5h2ZYET",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{ $('Webhook').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"{{ $json.choices[0].message.content }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        4432,
+        -2288
+      ],
+      "id": "98da4a49-6d3d-4e26-bbd3-2877867f34f3",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0a5130cb-bb16-4c7f-9c74-013b0e0d2fc9",
+              "name": "GHL Timezone",
+              "value": "(GHL TIMEZONE)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        976,
+        -2480
+      ],
+      "id": "e6fae4af-812d-4caf-9bf5-b16bf7293652",
+      "name": "GHL Timezone"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e31639d1-a661-4501-b3ba-16fabea08441",
+              "name": "calendarTime",
+              "value": "=(AVAILABILITY REQUEST)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        -2320
+      ],
+      "id": "a379b6c0-9b27-4e82-a6c4-fba18ffedda5",
+      "name": "Availability Request"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "operation": "getFreeSlots",
+        "calendarId": "={{ $('GHL Calendar ID').item.json.ghlCalendarId }}",
+        "startDate": "={{ $json.startDate }}",
+        "endDate": "={{ $json.endDate }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        4656,
+        -2480
+      ],
+      "id": "73e099a7-a1cb-4253-9be4-c64fb8da1bf4",
+      "name": "Get free slots of a calendar1",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f4fcbedd-43e6-4c6e-a8f9-59044f708eab",
+              "leftValue": "={{ Object.values($json).some(d => d.slots && d.slots.length > 0) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4880,
+        -2480
+      ],
+      "id": "b71fe399-d63d-4d28-b9fc-51d93e404518",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an Appointment Availability Assistant.\n\nYou will always receive:\n\nThe user’s original request (e.g. “Do you have availability on Saturday?”).\n\nA list of available time slots for the previous day (e.g. Friday). If you receive any timeslots that means the **previous day** has available timeslots.\n\nYour job:\n\nIdentify the day mentioned in the user’s request (e.g. Saturday).\n\nHave great context on approximation of time and take into consideration the user's request. If the user requested a timeframe in the morning, that means give them a timeframe around 8AM-12:00PM, for afternoon, around 12:30PM-5:00PM, for evening around 5:30PM-9:00PM, or slots that are available the closest to these timeframes.\n\nAlways answer by saying you checked that requested day, but offer availability for the day before it instead.\n\nExample: If the user asked about Saturday but we’re showing Friday slots, you must say something like:\n“I checked Saturday, but we don’t have availability that day. We do have some on Friday though…”\n\nDo not insert line breaks like this \\.\n\nReturn a maximum of 3 available slots for that previous day.\n\nSpeak naturally and conversationally, e.g.\n\n“I checked Saturday but it looks fully booked. On Friday, I see a couple of slots: 10:30 AM, 1 PM, or 3 PM. Do any of those work for you?”\n\nIf there are no slots for the previous day either, say something polite:\n“Unfortunately there are no available timeslots for Friday either. Could you try another day instead?”\n\nDo not say \"Previous day\", name the previous day. So if not available is for tomorrow just say we have a few slots today... If it's Friday, name the previous day \"Thursday\"\n\nNever output JSON. Respond in natural, user-friendly language only.",
+              "role": "system"
+            },
+            {
+              "content": "=User Request: {{ \n  (() => {\n    try {\n      return $('Booking Request Normalization').item.json.result;\n    } catch (e) {\n      try {\n        return $('Availability Request Normalization').item.json.result;\n      } catch (err) {\n        return '';\n      }\n    }\n  })() \n}}\n\n\nAvailable Slots for previous day: {{ JSON.stringify(Object.values($json)[0].slots, null, 2) }}\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        5104,
+        -2576
+      ],
+      "id": "56f43281-ebe8-497e-9ee0-41a52fb01f0a",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "EQaaGsNzb5h2ZYET",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{ $('Webhook').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"{{ $json.message.content }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        5456,
+        -2576
+      ],
+      "id": "b2791732-ee37-456e-86da-516ab833e0da",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4144,
+        -2480
+      ],
+      "id": "ccb1799d-c75e-4475-99a1-f9c226bb16c7",
+      "name": "Wait",
+      "webhookId": "10510007-7351-4f00-9722-514a25fed07f"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5168,
+        -2384
+      ],
+      "id": "543eb60b-48e2-4cd0-977c-7b365df51dbc",
+      "name": "Wait1",
+      "webhookId": "4b3f7409-2331-476e-8d6a-cad2cb0bbc1c"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "operation": "getFreeSlots",
+        "calendarId": "={{ $('GHL Calendar ID').item.json.ghlCalendarId }}",
+        "startDate": "={{ $json.startDate }}",
+        "endDate": "={{ $json.endDate }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        5680,
+        -2384
+      ],
+      "id": "897228f8-d1b2-48e3-8c04-f9a0d29b116d",
+      "name": "Get free slots of a calendar2",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f4fcbedd-43e6-4c6e-a8f9-59044f708eab",
+              "leftValue": "={{ Object.values($json).some(d => d.slots && d.slots.length > 0) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5904,
+        -2384
+      ],
+      "id": "537b1964-8276-4e46-93b0-74f4085e15e3",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an Appointment Availability Assistant.\n\nYou will always receive:\n1. The user’s original request, such as “Do you have availability on Sunday?”.\n2. A list of available time slots for the next seven days after that requested date. \n   These slots will be provided with exact date and time values.\n3. A mapping of which weekday each date corresponds to, so you know how to say the days naturally.\n\nYour job:\n- Identify the day the user originally asked about.\n- Politely explain that you checked that day, but there were no available slots.\n- Then look at the next seven days and summarize availability in a natural, spoken way:\n  - Group by weekday, for example “Monday and Tuesday have plenty of times, Wednesday just a couple, Thursday and Friday are fully booked, and there’s nothing over the weekend.”\n- If the user mentioned a timeframe, like morning, afternoon, evening, or after a certain hour, focus on slots close to that time.\n- Always answer with a single spoken-style phrase, as if you were talking directly to the user. Do not use bullet points, lists, numbering, or formatting. Do not output JSON. The response must sound natural when spoken by a voice AI.\n- Do not insert line breaks like this \\.\n\nExample responses:\n- “I checked Sunday, but unfortunately there aren’t any times available. Looking at the week ahead, I see a lot of openings on Monday and Tuesday, just a few on Wednesday, but Thursday and Friday are fully booked and the weekend is closed. Would Monday or Tuesday work for you?”\n- “I checked Monday after three o’clock, but there’s nothing left that day. On Tuesday there are several options after three, and Wednesday also has a few good times. Would you like me to book you for Tuesday or Wednesday?”\n- “I checked Saturday, but it looks like everything is full. Over the next seven days I see options on Monday, Tuesday, and Wednesday, but nothing later in the week. Which of those days would you prefer?”\n",
+              "role": "system"
+            },
+            {
+              "content": "=User Request: {{ \n  (() => {\n    try {\n      return $('Booking Request Normalization').item.json.result;\n    } catch (e) {\n      try {\n        return $('Availability Request Normalization').item.json.result;\n      } catch (err) {\n        return '';\n      }\n    }\n  })() \n}}\n\n\nAvailable Slots for next 7 days after the requested date: {{ JSON.stringify(Object.entries($json).map(([date, data]) => ({ date, slots: data.slots })), null, 2) }}\n\n\nDate mapping: {{ $('Get Next Week\\'s Availability').item.json.days }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        6128,
+        -2480
+      ],
+      "id": "d1175f60-af35-4761-8636-09ea4141ef4c",
+      "name": "Message a model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "EQaaGsNzb5h2ZYET",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{ $('Webhook').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"{{ $json.message.content }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        6480,
+        -2480
+      ],
+      "id": "a5c44f0a-e73e-43b8-b016-b6bbee5cb9b2",
+      "name": "Respond to Webhook3"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        6192,
+        -2288
+      ],
+      "id": "03fc10e5-e7b9-4d66-b4e9-c66c7691c499",
+      "name": "Wait2",
+      "webhookId": "4b3f7409-2331-476e-8d6a-cad2cb0bbc1c"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 1,
+        "filters": {
+          "query": "={{ $('User Phone Number').item.json.userPhone }}"
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        6480,
+        -2288
+      ],
+      "id": "9a0ea1af-6577-4f35-b24d-3c3570a5c208",
+      "name": "Get many contacts",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b10cdbd3-6fef-4b0e-b4d6-0e605430fd16",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6704,
+        -2288
+      ],
+      "id": "0d8de34a-f6bb-42fa-964b-60b2c508fa57",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get many contacts').item.json.id }}",
+        "updateFields": {
+          "tags": "={{ $('GHL Calendar Send Tag').item.json.tag }}"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        6928,
+        -2480
+      ],
+      "id": "1292abcf-1a8a-425f-a72c-d1af4abfabc8",
+      "name": "Update a contact",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{ $('Webhook').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"You know what... I was trying to find availability but looks like there is a technical glitch on my side. I'm sending you a text with the calendar link. Can you book it on your side?\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        7152,
+        -2480
+      ],
+      "id": "b70cce2a-4a0d-4050-b608-bf86d016e54f",
+      "name": "Respond to Webhook4"
+    },
+    {
+      "parameters": {
+        "email": "={{ undefined }}",
+        "phone": "={{ $('User Phone Number').item.json.userPhone }}",
+        "additionalFields": {
+          "tags": "={{ $('GHL Calendar Send Tag').item.json.tag }}"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        6928,
+        -2288
+      ],
+      "id": "5c19a6a3-82be-465c-a4e3-fe67bcfd5da3",
+      "name": "Create or update a contact",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{ $('Webhook').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"You know what... I was trying to find availability but looks like there is a technical glitch on my side. I'm sending you a text with the calendar link. Can you book it on your side?\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        7152,
+        -2288
+      ],
+      "id": "65bf58f0-5ee3-4ef6-8bd2-9218d4d2b379",
+      "name": "Respond to Webhook5"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 1,
+        "filters": {
+          "query": "={{ $('User Phone Number').item.json.userPhone }}"
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        -2576
+      ],
+      "id": "bb1982ba-086b-4a99-81bc-faa8c89f6288",
+      "name": "Get many contacts1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f01a1e41-4bd6-47a4-9533-68ef05fcc92f",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2080,
+        -2576
+      ],
+      "id": "448352c7-51b9-4895-8169-22a2957082fe",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "email": "={{ undefined }}",
+        "phone": "={{ $('User Phone Number').item.json.userPhone }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2304,
+        -2512
+      ],
+      "id": "fed421c1-dbde-4564-b9a6-f8fc9caefe15",
+      "name": "Create or update a contact1",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "KqzMSyj1oUa9d2Nj",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e31639d1-a661-4501-b3ba-16fabea08441",
+              "name": "appointmentTime",
+              "value": "=(BOOKING REQUEST)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        -2576
+      ],
+      "id": "acfb172e-9b98-4746-b70e-faaa81a6a0a9",
+      "name": "Booking Request"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{  $('Webhook').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"Perfect, your appointment is booked for [requested time]\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        3200,
+        -2624
+      ],
+      "id": "af0acc72-7332-4e07-9f6b-788175889ebd",
+      "name": "Respond to Webhook6"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1251876665362219120",
+          "mode": "list",
+          "cachedResultName": "EliteArchitects.ai",
+          "cachedResultUrl": "https://discord.com/channels/1251876665362219120"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1412435896162193598",
+          "mode": "list",
+          "cachedResultName": "all-clients-appointment-errors",
+          "cachedResultUrl": "https://discord.com/channels/1251876665362219120/1412435896162193598"
+        },
+        "content": "=**Potential Error in Appt Booking Flow**\n\nCheck it ASAP.\n\n{{ $execution.id ? `https://n8n.elitearchitects.ai/workflow/${$workflow.id}/executions/${$execution.id}` : 'Execution data not available' }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        6928,
+        -2096
+      ],
+      "id": "5dc3b07d-83e6-4098-b50e-7e58dff3818f",
+      "name": "Potential Error Notification",
+      "webhookId": "9326db1e-247e-4393-8d86-298d3e4738fc",
+      "credentials": {
+        "discordBotApi": {
+          "id": "ATRHFMTkLtsbLfPc",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e165a4b-d6ca-4be5-bc5d-b018eec7960e",
+              "name": "userPhone",
+              "value": "=(CUSTOMER PHONE NUMBER)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        -2480
+      ],
+      "id": "13ad98ff-c9d7-4259-b7e6-cecb5966dcc0",
+      "name": "User Phone Number"
+    },
+    {
+      "parameters": {
+        "content": "## Webhook Response Differentiation\n\nIf it's Retell or  ChatGPT agent, webhook response should look like this\n\n{\n  \"result\": \"(result)\"\n} \n\n",
+        "height": 224,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        -2928
+      ],
+      "id": "d094ba92-59f4-425a-9c4e-f672da41ca55",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 464,
+        "width": 1696,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -2624
+      ],
+      "id": "a06ce85d-efd4-43d0-a891-10d2ac05d9a7",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Potential Error Logging\n\nI log potential errors in my Discord server\n\nYou can log them by sending an email to you or whichever else is a better way for you.",
+        "height": 224,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6832,
+        -1904
+      ],
+      "id": "f525f061-a3a7-4a9a-938b-51bde4622baa",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## GHL Tagging to send text to user\n\nYou need to create your own tag & workflow.",
+        "height": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7440,
+        -2320
+      ],
+      "id": "ff260d97-fd30-4cdb-a583-50aba712b5bc",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/calendars/events/appointments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('GHL API Key').item.json['GHL Subaccount API Key'] }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"calendarId\": \"{{ $('GHL Calendar ID').item.json.ghlCalendarId }}\",\n    \"locationId\": \"{{ $('GHL Subaccount ID').item.json['GHL Subaccount ID'] }}\",\n    \"contactId\": \"{{ $('Get many contacts1').item.json.id || $('Create or update a contact1').item.json.id || '' }}\",\n    \"startTime\": \"{{ $json.formatted }}\"\n  }",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2752,
+        -2576
+      ],
+      "id": "1f601c27-401b-4b83-ba1c-eed46cc8acdc",
+      "name": "Appt Booking",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "=booked",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1fb56342-22da-422e-9187-6b126aa2df51"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Appointment Booked"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "de33c86b-4910-4aed-9c7c-73ad52f1f216",
+                    "leftValue": "={{ $json.error.message }}",
+                    "rightValue": "no longer",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Slot Not Available"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2976,
+        -2576
+      ],
+      "id": "78c45007-bfc7-4926-8a4b-8fc042d866a1",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "content": "## Initial Mapping\n\nYou need to trigger the tool once and map:\n\n1. GHL Subaccount ID\n2. GHL Private Integration API Key\n3. GHL tag you have created to trigger the Calendar send link\n4. GHL Calendar ID\n5. User's Phone number from the tool to node called \"User Phone Number\"\n6. Your GHL subaccount's Timezone to GHL Timezone nodes\n7. User's requested time for booking into 'Booking Request'\n8. User's requested time for availability into 'Availability Request'",
+        "height": 368,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -2112
+      ],
+      "id": "fd9d917a-8747-4f8d-84ee-c1fcbe4d8812",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec9cefe4-4fb4-4dc7-94d9-095097b378c3",
+              "name": "ghlCalendarId",
+              "value": "(GHL CALENDAR ID)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        528,
+        -2480
+      ],
+      "id": "fde680d8-d3ea-4476-9579-ffd64eae5ecc",
+      "name": "GHL Calendar ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e34fc79-c001-46f2-ba07-c3ff37904e04",
+              "name": "GHL Subaccount ID",
+              "value": "(YOUR GHL SUBACCOUNT ID)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        -2480
+      ],
+      "id": "18afb635-3654-4350-a427-dfc6a9953d18",
+      "name": "GHL Subaccount ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1786830-39be-4951-81b2-5a0660c86615",
+              "name": "tag",
+              "value": "(YOUR TAG TO TRIGGER GHL WORKFLOW TO SEND THE TEXT)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        -2480
+      ],
+      "id": "8933b041-9f33-48b2-a7e1-6b67fb982ad4",
+      "name": "GHL Calendar Send Tag"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ae6f8619-1f49-40e9-81d6-3c725188fa40",
+              "name": "GHL Subaccount API Key",
+              "value": "(YOUR GHL PRIVATE INTEGRATION API KEY)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -2480
+      ],
+      "id": "5a215234-0889-48fa-8a6b-c70c126cf73c",
+      "name": "GHL API Key"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------------\n// Normalizer for \"Booking Request\"\n// ----------------------------\n\n// Recursive function: walks down until it finds the deepest primitive value\nfunction getDeepestValue(obj) {\n  if (typeof obj !== \"object\" || obj === null) {\n    return obj; // primitive (string, number, etc.)\n  }\n  const values = Object.values(obj);\n  if (values.length === 0) return \"\";\n  return getDeepestValue(values[values.length - 1]);\n}\n\n// Grab JSON from \"Booking Request\" node\nconst bookingData = $('Booking Request').first().json;\n\n// If the deepest value is a JSON string, try parsing it\nfunction normalizeValue(raw) {\n  if (typeof raw === \"string\") {\n    try {\n      const parsed = JSON.parse(raw);\n      return getDeepestValue(parsed);\n    } catch (e) {\n      return raw;\n    }\n  }\n  return raw;\n}\n\n// Extract normalized phrase\nconst phrase = normalizeValue(getDeepestValue(bookingData));\n\n// ----------------------------\n// Output\n// ----------------------------\nreturn [{\n  json: {\n    result: String(phrase || \"\")\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -2576
+      ],
+      "id": "63ae58bf-4cb0-44f2-ae90-d29dd8b4c5d7",
+      "name": "Booking Request Normalization"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------------\n// Normalizer for \"Booking Request\"\n// ----------------------------\n\n// Recursive function: walks down until it finds the deepest primitive value\nfunction getDeepestValue(obj) {\n  if (typeof obj !== \"object\" || obj === null) {\n    return obj; // primitive (string, number, etc.)\n  }\n  const values = Object.values(obj);\n  if (values.length === 0) return \"\";\n  return getDeepestValue(values[values.length - 1]);\n}\n\n// Grab JSON from \"Booking Request\" node\nconst bookingData = $('Availability Request').first().json;\n\n// If the deepest value is a JSON string, try parsing it\nfunction normalizeValue(raw) {\n  if (typeof raw === \"string\") {\n    try {\n      const parsed = JSON.parse(raw);\n      return getDeepestValue(parsed);\n    } catch (e) {\n      return raw;\n    }\n  }\n  return raw;\n}\n\n// Extract normalized phrase\nconst phrase = normalizeValue(getDeepestValue(bookingData));\n\n// ----------------------------\n// Output\n// ----------------------------\nreturn [{\n  json: {\n    result: String(phrase || \"\")\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -2320
+      ],
+      "id": "7b7b0c9e-84b4-469f-b73f-d86fa11c300b",
+      "name": "Availability Request Normalization"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------------\n// Inputs\n// ----------------------------\nconst BUSINESS_TZ = $('GHL Timezone').first().json[\"GHL Timezone\"];\n\ntry {\n  Intl.DateTimeFormat(undefined, { timeZone: BUSINESS_TZ });\n} catch (err) {\n  throw new Error(`Invalid timezone provided: ${BUSINESS_TZ}`);\n}\n\n// ----------------------------\n// Extract phrase from normalization nodes\n// ----------------------------\nlet phrase = \"\";\n\ntry {\n  phrase = $('Booking Request Normalization').first().json.result || \"\";\n} catch (e) {\n  try {\n    phrase = $('Availability Request Normalization').first().json.result || \"\";\n  } catch (err) {\n    phrase = \"\";\n  }\n}\n\nphrase = phrase.toLowerCase().trim();\nconsole.log(\"DEBUG → Final phrase chosen:\", phrase);\n\n// ----------------------------\n// Get \"now\" in BUSINESS_TZ\n// ----------------------------\nconst nowUtc = new Date();\nconst nowStr = nowUtc.toLocaleString(\"en-US\", { timeZone: BUSINESS_TZ });\nconst nowInTz = new Date(nowStr);\nconst todayTzDay = nowInTz.getDay(); // 0 (Sun) → 6 (Sat)\n\nconsole.log(\"DEBUG → Now in TZ:\", nowInTz, \"Day index:\", todayTzDay);\n\n// ----------------------------\n// Convert BUSINESS_TZ wall-clock → UTC millis\n// ----------------------------\nfunction toUnixMs(date, hour = 0, minute = 0, second = 0, ms = 0) {\n  const fmt = new Intl.DateTimeFormat(\"en-GB\", {\n    timeZone: BUSINESS_TZ,\n    year: \"numeric\",\n    month: \"2-digit\",\n    day: \"2-digit\"\n  });\n\n  const parts = fmt.formatToParts(date);\n  const year = parseInt(parts.find(p => p.type === \"year\").value, 10);\n  const month = parseInt(parts.find(p => p.type === \"month\").value, 10) - 1;\n  const day = parseInt(parts.find(p => p.type === \"day\").value, 10);\n\n  // Build a naive UTC timestamp\n  const utcNaive = Date.UTC(year, month, day, hour, minute, second, ms);\n\n  // Get timezone offset (DST-aware)\n  const tzString = new Date(utcNaive).toLocaleString(\"en-US\", { timeZone: BUSINESS_TZ, timeZoneName: \"short\" });\n  const match = tzString.match(/GMT([+-]\\d{1,2})(?::(\\d{2}))?/);\n\n  let tzOffsetMinutes = 0;\n  if (match) {\n    const hours = parseInt(match[1], 10);\n    const minutes = match[2] ? parseInt(match[2], 10) : 0;\n    tzOffsetMinutes = (hours * 60) + minutes;\n  }\n\n  return utcNaive - tzOffsetMinutes * 60 * 1000;\n}\n\n// ----------------------------\n// Resolve Target Date\n// ----------------------------\nlet targetDate = new Date(nowInTz);\nconst weekdays = [\"sunday\",\"monday\",\"tuesday\",\"wednesday\",\"thursday\",\"friday\",\"saturday\"];\nlet matched = false;\n\nconst weekdayPattern = /\\b(next\\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\\b/;\nconst match = phrase.match(weekdayPattern);\n\nif (match) {\n  const isNext = !!match[1];\n  const dayName = match[2];\n  const targetDayIndex = weekdays.indexOf(dayName);\n\n  console.log(\"DEBUG → Weekday matched:\", { dayName, targetDayIndex, isNext });\n\n  if (targetDayIndex !== -1) {\n    let daysUntil = targetDayIndex - todayTzDay;\n\n    if (daysUntil <= 0) {\n      daysUntil += 7; // always move forward\n    }\n\n    // ✅ Fix: Only add an extra 7 if phrase says \"next\"\n    if (isNext) {\n      daysUntil += 7;\n    }\n\n    console.log(\"DEBUG → Days until target:\", daysUntil);\n\n    targetDate.setDate(targetDate.getDate() + daysUntil);\n    matched = true;\n  }\n}\n\nif (!matched) {\n  if (phrase.includes(\"tomorrow\")) {\n    targetDate.setDate(targetDate.getDate() + 1);\n    console.log(\"DEBUG → Using tomorrow\");\n  } else if (phrase.includes(\"today\")) {\n    console.log(\"DEBUG → Using today\");\n  } else if (phrase.includes(\"next week\")) {\n    targetDate.setDate(targetDate.getDate() + 7);\n    console.log(\"DEBUG → Using next week\");\n  }\n}\n\nconsole.log(\"DEBUG → Final targetDate object:\", targetDate.toString());\n\n// ----------------------------\n// Output\n// ----------------------------\nconst startDate = toUnixMs(targetDate, 0, 0, 0, 0);\nconst endDate = toUnixMs(targetDate, 23, 59, 59, 999);\n\nconsole.log(\"DEBUG → Output window:\", {\n  startDateReadable: new Date(startDate).toString(),\n  endDateReadable: new Date(endDate).toString()\n});\n\nreturn [{\n  json: {\n    phrase,\n    startDate,\n    endDate,\n    businessTimezone: BUSINESS_TZ,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3408,
+        -2336
+      ],
+      "id": "1a0204bb-86e1-4f93-8163-e5250f33f770",
+      "name": "Get Target Day's Availability"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------------\n// Inputs\n// ----------------------------\nconst IANA_TIMEZONE = $('GHL Timezone').first().json[\"GHL Timezone\"];\n\n// ----------------------------\n// Extract phrase directly from Booking Request Normalization\n// ----------------------------\nlet phrase = \"\";\n\ntry {\n  phrase = $('Booking Request Normalization').first().json.result || \"\";\n} catch (e) {\n  phrase = \"\";\n}\n\nphrase = String(phrase).toLowerCase().trim();\nconsole.log(\"DEBUG → Final phrase:\", phrase);\n\n// ----------------------------\n// Resolve target date\n// ----------------------------\nlet target = new Date();\nconst weekdays = [\"sunday\",\"monday\",\"tuesday\",\"wednesday\",\"thursday\",\"friday\",\"saturday\"];\nconst todayDay = target.getDay();\n\nlet matchedDay = false;\n\n// Match weekdays (with \"next\" handling)\nfor (let i = 0; i < 7; i++) {\n  const check = weekdays[(todayDay + i) % 7];\n  if (phrase.includes(check)) {\n    let daysUntil = i;\n    if (daysUntil === 0) daysUntil = 7; // same day → push to next week\n\n    if (phrase.includes(\"next\")) {\n      daysUntil += 7; // \"next Saturday\" = skip a week\n    }\n\n    target.setDate(target.getDate() + daysUntil);\n    matchedDay = true;\n    break;\n  }\n}\n\n// If no weekday, fallback to today/tomorrow\nif (!matchedDay) {\n  if (phrase.includes(\"tomorrow\")) {\n    target.setDate(target.getDate() + 1);\n  } else if (phrase.includes(\"today\")) {\n    // keep today\n  }\n}\n\n// ----------------------------\n// Parse time (e.g. \"4 PM\", \"16:00\")\n// ----------------------------\nconst timeMatch = phrase.match(/(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)?/i);\nif (timeMatch) {\n  let hours = parseInt(timeMatch[1], 10);\n  const minutes = parseInt(timeMatch[2] || \"0\", 10);\n  const ampm = timeMatch[3]?.toLowerCase();\n\n  if (ampm === \"pm\" && hours < 12) hours += 12;\n  if (ampm === \"am\" && hours === 12) hours = 0;\n\n  target.setHours(hours, minutes, 0, 0);\n}\n\n// ----------------------------\n// Format ISO string with timezone offset (DST aware)\n// ----------------------------\nfunction formatWithOffset(date, timeZone) {\n  // 1. Get the offset in the given timeZone\n  const tz = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone,\n    timeZoneName: \"short\"\n  }).formatToParts(date);\n\n  const tzName = tz.find(p => p.type === \"timeZoneName\").value;\n  const match = tzName.match(/GMT([+-]\\d{1,2})(?::(\\d{2}))?/);\n\n  let offset = \"+00:00\";\n  if (match) {\n    let hours = parseInt(match[1], 10);\n    let minutes = match[2] ? parseInt(match[2], 10) : 0;\n\n    const sign = hours < 0 || match[1].startsWith(\"-\") ? \"-\" : \"+\";\n    hours = Math.abs(hours);\n\n    const hh = String(hours).padStart(2, \"0\");\n    const mm = String(minutes).padStart(2, \"0\");\n\n    offset = `${sign}${hh}:${mm}`;\n  }\n\n  // 2. Format date into ISO with offset\n  const yyyy = date.getFullYear();\n  const mm = String(date.getMonth() + 1).padStart(2, \"0\");\n  const dd = String(date.getDate()).padStart(2, \"0\");\n  const HH = String(date.getHours()).padStart(2, \"0\");\n  const MM = String(date.getMinutes()).padStart(2, \"0\");\n  const SS = String(date.getSeconds()).padStart(2, \"0\");\n\n  return `${yyyy}-${mm}-${dd}T${HH}:${MM}:${SS}${offset}`;\n}\n\nconst formatted = formatWithOffset(target, IANA_TIMEZONE);\n\n// ----------------------------\n// Output\n// ----------------------------\nreturn [{\n  json: {\n    phrase,\n    formatted,\n    timezone: IANA_TIMEZONE\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        -2576
+      ],
+      "id": "c8f78ba5-fe4b-4d7d-be59-d974e0782550",
+      "name": "Format Date"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------------\n// Inputs\n// ----------------------------\nconst BUSINESS_TZ = $('GHL Timezone').first().json[\"GHL Timezone\"];\n\ntry {\n  Intl.DateTimeFormat(undefined, { timeZone: BUSINESS_TZ });\n} catch (err) {\n  throw new Error(`Invalid timezone provided: ${BUSINESS_TZ}`);\n}\n\n// ----------------------------\n// Extract phrase from normalization nodes\n// ----------------------------\nlet phrase = \"\";\n\ntry {\n  phrase = $('Booking Request Normalization').first().json.result || \"\";\n} catch (e) {\n  try {\n    phrase = $('Availability Request Normalization').first().json.result || \"\";\n  } catch (err) {\n    phrase = \"\";\n  }\n}\n\nphrase = phrase.toLowerCase().trim();\nconsole.log(\"DEBUG → Final phrase chosen:\", phrase);\n\n// ----------------------------\n// Get \"now\" in BUSINESS_TZ\n// ----------------------------\nconst nowUtc = new Date();\nconst nowStr = nowUtc.toLocaleString(\"en-US\", { timeZone: BUSINESS_TZ });\nconst nowInTz = new Date(nowStr);\nconst todayTzDay = nowInTz.getDay(); // 0 (Sun) → 6 (Sat)\n\nconsole.log(\"DEBUG → Now in TZ:\", nowInTz, \"Day index:\", todayTzDay);\n\n// ----------------------------\n// Convert BUSINESS_TZ wall-clock → UTC millis\n// ----------------------------\nfunction toUnixMs(date, hour = 0, minute = 0, second = 0, ms = 0) {\n  const fmt = new Intl.DateTimeFormat(\"en-GB\", {\n    timeZone: BUSINESS_TZ,\n    year: \"numeric\",\n    month: \"2-digit\",\n    day: \"2-digit\"\n  });\n\n  const parts = fmt.formatToParts(date);\n  const year = parseInt(parts.find(p => p.type === \"year\").value, 10);\n  const month = parseInt(parts.find(p => p.type === \"month\").value, 10) - 1;\n  const day = parseInt(parts.find(p => p.type === \"day\").value, 10);\n\n  // Build a naive UTC timestamp\n  const utcNaive = Date.UTC(year, month, day, hour, minute, second, ms);\n\n  // Get timezone offset (DST-aware)\n  const tzString = new Date(utcNaive).toLocaleString(\"en-US\", { timeZone: BUSINESS_TZ, timeZoneName: \"short\" });\n  const match = tzString.match(/GMT([+-]\\d{1,2})(?::(\\d{2}))?/);\n\n  let tzOffsetMinutes = 0;\n  if (match) {\n    const hours = parseInt(match[1], 10);\n    const minutes = match[2] ? parseInt(match[2], 10) : 0;\n    tzOffsetMinutes = (hours * 60) + minutes;\n  }\n\n  return utcNaive - tzOffsetMinutes * 60 * 1000;\n}\n\n// ----------------------------\n// Resolve Target Date\n// ----------------------------\nlet targetDate = new Date(nowInTz);\nconst weekdays = [\"sunday\",\"monday\",\"tuesday\",\"wednesday\",\"thursday\",\"friday\",\"saturday\"];\nlet matched = false;\n\nconst weekdayPattern = /\\b(next\\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\\b/;\nconst match = phrase.match(weekdayPattern);\n\nif (match) {\n  const isNext = !!match[1];\n  const dayName = match[2];\n  const targetDayIndex = weekdays.indexOf(dayName);\n\n  console.log(\"DEBUG → Weekday matched:\", { dayName, targetDayIndex, isNext });\n\n  if (targetDayIndex !== -1) {\n    let daysUntil = targetDayIndex - todayTzDay;\n\n    if (daysUntil <= 0) {\n      daysUntil += 7; // always move forward\n    }\n\n    // ✅ Fix: Only add an extra 7 if phrase says \"next\"\n    if (isNext) {\n      daysUntil += 7;\n    }\n\n    console.log(\"DEBUG → Days until target:\", daysUntil);\n\n    targetDate.setDate(targetDate.getDate() + daysUntil);\n    matched = true;\n  }\n}\n\nif (!matched) {\n  if (phrase.includes(\"tomorrow\")) {\n    targetDate.setDate(targetDate.getDate() + 1);\n    console.log(\"DEBUG → Using tomorrow\");\n  } else if (phrase.includes(\"today\")) {\n    console.log(\"DEBUG → Using today\");\n  } else if (phrase.includes(\"next week\")) {\n    targetDate.setDate(targetDate.getDate() + 7);\n    console.log(\"DEBUG → Using next week\");\n  }\n}\n\n// ----------------------------\n// Shift to the DAY BEFORE\n// ----------------------------\ntargetDate.setDate(targetDate.getDate() - 1);\nconsole.log(\"DEBUG → Shifted targetDate (previous day):\", targetDate.toString());\n\n// ----------------------------\n// Output\n// ----------------------------\nconst startDate = toUnixMs(targetDate, 0, 0, 0, 0);\nconst endDate = toUnixMs(targetDate, 23, 59, 59, 999);\n\nconsole.log(\"DEBUG → Output window:\", {\n  startDateReadable: new Date(startDate).toString(),\n  endDateReadable: new Date(endDate).toString()\n});\n\nreturn [{\n  json: {\n    phrase,\n    startDate,\n    endDate,\n    businessTimezone: BUSINESS_TZ\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4432,
+        -2480
+      ],
+      "id": "a8c28fbb-0597-47da-9022-f91dd8d17dd4",
+      "name": "Get Previous Day's Availability"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------------\n// Inputs\n// ----------------------------\nconst BUSINESS_TZ = $('GHL Timezone').first().json[\"GHL Timezone\"];\n\ntry {\n  Intl.DateTimeFormat(undefined, { timeZone: BUSINESS_TZ });\n} catch (err) {\n  throw new Error(`Invalid timezone provided: ${BUSINESS_TZ}`);\n}\n\n// ----------------------------\n// Extract phrase from normalization nodes\n// ----------------------------\nlet phrase = \"\";\n\ntry {\n  phrase = $('Booking Request Normalization').first().json.result || \"\";\n} catch (e) {\n  try {\n    phrase = $('Availability Request Normalization').first().json.result || \"\";\n  } catch (err) {\n    phrase = \"\";\n  }\n}\n\nphrase = phrase.toLowerCase().trim();\nconsole.log(\"DEBUG → Final phrase chosen:\", phrase);\n\n// ----------------------------\n// Get \"now\" in BUSINESS_TZ\n// ----------------------------\nconst nowUtc = new Date();\nconst nowStr = nowUtc.toLocaleString(\"en-US\", { timeZone: BUSINESS_TZ });\nconst nowInTz = new Date(nowStr);\nconst todayTzDay = nowInTz.getDay();\n\nconsole.log(\"DEBUG → Now in TZ:\", nowInTz, \"Day index:\", todayTzDay);\n\n// ----------------------------\n// Helper: BUSINESS_TZ wall-clock → UTC millis\n// ----------------------------\nfunction toUnixMs(date, hour = 0, minute = 0, second = 0, ms = 0) {\n  const fmt = new Intl.DateTimeFormat(\"en-GB\", {\n    timeZone: BUSINESS_TZ,\n    year: \"numeric\",\n    month: \"2-digit\",\n    day: \"2-digit\"\n  });\n\n  const parts = fmt.formatToParts(date);\n  const year = parseInt(parts.find(p => p.type === \"year\").value, 10);\n  const month = parseInt(parts.find(p => p.type === \"month\").value, 10) - 1;\n  const day = parseInt(parts.find(p => p.type === \"day\").value, 10);\n\n  const utcNaive = Date.UTC(year, month, day, hour, minute, second, ms);\n\n  const tzString = new Date(utcNaive).toLocaleString(\"en-US\", {\n    timeZone: BUSINESS_TZ,\n    timeZoneName: \"short\"\n  });\n  const match = tzString.match(/GMT([+-]\\d{1,2})(?::(\\d{2}))?/);\n\n  let tzOffsetMinutes = 0;\n  if (match) {\n    const hours = parseInt(match[1], 10);\n    const minutes = match[2] ? parseInt(match[2], 10) : 0;\n    tzOffsetMinutes = (hours * 60) + minutes;\n  }\n\n  return utcNaive - tzOffsetMinutes * 60 * 1000;\n}\n\n// ----------------------------\n// Resolve target date from phrase\n// ----------------------------\nlet targetDate = new Date(nowInTz);\nconst weekdays = [\"sunday\",\"monday\",\"tuesday\",\"wednesday\",\"thursday\",\"friday\",\"saturday\"];\nlet matched = false;\n\nconst weekdayPattern = /\\b(next\\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\\b/;\nconst match = phrase.match(weekdayPattern);\n\nif (match) {\n  const isNext = !!match[1];\n  const dayName = match[2];\n  const targetDayIndex = weekdays.indexOf(dayName);\n\n  console.log(\"DEBUG → Weekday matched:\", { dayName, targetDayIndex, isNext });\n\n  if (targetDayIndex !== -1) {\n    let daysUntil = targetDayIndex - todayTzDay;\n\n    if (daysUntil <= 0) {\n      daysUntil += 7; // always move forward\n    }\n\n    // ✅ Fix: Only add an extra 7 if phrase says \"next\"\n    if (isNext) {\n      daysUntil += 7;\n    }\n\n    console.log(\"DEBUG → Days until target:\", daysUntil);\n\n    targetDate.setDate(targetDate.getDate() + daysUntil);\n    matched = true;\n  }\n}\n\nif (!matched) {\n  if (phrase.includes(\"tomorrow\")) {\n    targetDate.setDate(targetDate.getDate() + 1);\n    console.log(\"DEBUG → Using tomorrow\");\n  } else if (phrase.includes(\"today\")) {\n    console.log(\"DEBUG → Using today\");\n  } else if (phrase.includes(\"next week\")) {\n    targetDate.setDate(targetDate.getDate() + 7);\n    console.log(\"DEBUG → Using next week\");\n  }\n}\n\n// ----------------------------\n// Build next 7 days AFTER target date\n// ----------------------------\nconst daysMap = {};\ntargetDate.setDate(targetDate.getDate() + 1); // start from NEXT day\n\nfor (let i = 0; i < 7; i++) {\n  const dayDate = new Date(targetDate);\n  dayDate.setDate(targetDate.getDate() + i);\n\n  const fmt = new Intl.DateTimeFormat(\"en-CA\", { timeZone: BUSINESS_TZ }); // YYYY-MM-DD\n  const formattedDate = fmt.format(dayDate);\n\n  daysMap[formattedDate] = weekdays[dayDate.getDay()];\n}\n\n// ----------------------------\n// Single start and end\n// ----------------------------\nconst firstDay = new Date(targetDate);\nconst lastDay = new Date(targetDate);\nlastDay.setDate(lastDay.getDate() + 6);\n\nconst startDate = toUnixMs(firstDay, 0, 0, 0, 0);\nconst endDate = toUnixMs(lastDay, 23, 59, 59, 999);\n\n// ----------------------------\n// Output\n// ----------------------------\nreturn [{\n  json: {\n    phrase,\n    businessTimezone: BUSINESS_TZ,\n    startDate,\n    endDate,\n    days: daysMap\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5456,
+        -2384
+      ],
+      "id": "c3da01c4-60ed-46bf-b43e-66552d45466c",
+      "name": "Get Next Week's Availability"
+    },
+    {
+      "parameters": {
+        "content": "## Very Important\n\nIn the \"Switch\" node, you need to manually insert the name of the tools triggered as shown in the YouTube video to differentiate the conditions on when the flow is going to go \"up\" to Booking Request and when it's going to continue on the lower leg with Availability Request",
+        "height": 192,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        784,
+        -2016
+      ],
+      "id": "32b2fe82-a364-4b27-914f-3dfee4a0e8f4",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.elitearchitects.ai",
+            "user-agent": "axios/1.8.3",
+            "content-length": "21924",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "baggage": "sentry-environment=production,sentry-public_key=a0021577936aec367b16615ad816c078,sentry-trace_id=d26054aef5ce45968c8e7be92b19b804",
+            "content-type": "application/json",
+            "cookie": "callId=9307cf46-34db-44a8-89ab-86ca4e4b65d7",
+            "sentry-trace": "d26054aef5ce45968c8e7be92b19b804-b7fdc8a68f5a7461",
+            "via": "1.1 Caddy",
+            "x-call-id": "9307cf46-34db-44a8-89ab-86ca4e4b65d7",
+            "x-forwarded-for": "44.245.171.135",
+            "x-forwarded-host": "n8n.elitearchitects.ai",
+            "x-forwarded-proto": "https",
+            "x-vapi-secret": ""
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "message": {
+              "timestamp": 1757633661505,
+              "type": "tool-calls",
+              "toolCalls": [
+                {
+                  "id": "call_fbOvIm5p0UCVZCbkMbc05HuS",
+                  "type": "function",
+                  "function": {
+                    "name": "bookingAppointment",
+                    "arguments": {
+                      "appTime": "Tuesday at 3 PM"
+                    }
+                  }
+                }
+              ],
+              "toolCallList": [
+                {
+                  "id": "call_fbOvIm5p0UCVZCbkMbc05HuS",
+                  "type": "function",
+                  "function": {
+                    "name": "bookingAppointment",
+                    "arguments": {
+                      "appTime": "Tuesday at 3 PM"
+                    }
+                  }
+                }
+              ],
+              "toolWithToolCallList": [
+                {
+                  "type": "function",
+                  "function": {
+                    "name": "bookingAppointment",
+                    "parameters": {
+                      "type": "object",
+                      "required": [
+                        "appTime"
+                      ],
+                      "properties": {
+                        "appTime": {
+                          "type": "string",
+                          "default": "",
+                          "description": "The phrase on date or date and time that the user wants to book the appointment for."
+                        }
+                      }
+                    },
+                    "description": "This tool is triggered when the user has expressed that he'd like to book an appointment."
+                  },
+                  "server": {
+                    "url": "https://n8n.elitearchitects.ai/webhook-test/ba221fe8-1285-4a12-9dd9-42aee2effbc8"
+                  },
+                  "messages": [
+                    {
+                      "type": "request-start",
+                      "content": "yes please give me a sec",
+                      "contents": [],
+                      "conditions": [],
+                      "blocking": false
+                    }
+                  ],
+                  "toolCall": {
+                    "id": "call_fbOvIm5p0UCVZCbkMbc05HuS",
+                    "type": "function",
+                    "function": {
+                      "name": "bookingAppointment",
+                      "arguments": {
+                        "appTime": "Tuesday at 3 PM"
+                      }
+                    }
+                  }
+                }
+              ],
+              "artifact": {
+                "messages": [
+                  {
+                    "role": "system",
+                    "message": "User will either ask you for booking an appointment or for calendar availability. Any time the person is asking to check for availability, use AVAILABILITY SECTION and end up triggering the calendarAvailability tool after going through the preliminary steps of that section. Anytime the user wants to book an appointment, use APPOINTMENT BOOKING SECTION and end up triggering the bookingAppointment tool after going through the preliminary steps of that section.\n\n\n\n#APPOINTMENT BOOKING SECTION\n- Get time or date and time\n- If the person gives you a range like \"anytime from 12pm to 4pm\", then suggest a specific time in that range.\n- confirm the date/time with user\n- When the user responds positively to a specific time and says something like \"yes\" or \"yeah\" or \"that works\" or \"let's do that time\" or \"that's fine\" regarding a specific time and date, that means confirmed the exact time or date and time, do not ask for confirmation again but proceed to '[BOOK TRIGGER]'.\n\n[BOOK TRIGGER]\n- Trigg...",
+                    "time": 1757633543978,
+                    "secondsFromStart": 0
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Hello.",
+                    "time": 1757633545280,
+                    "endTime": 1757633545780,
+                    "secondsFromStart": 1.04,
+                    "duration": 500,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "Hey.",
+                    "time": 1757633549740,
+                    "endTime": 1757633550240,
+                    "secondsFromStart": 5.5,
+                    "duration": 500
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Hi there. How can I assist you to",
+                    "time": 1757633551330,
+                    "endTime": 1757633553070,
+                    "secondsFromStart": 7.09,
+                    "duration": 1740,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "I would like to check for availability.",
+                    "time": 1757633552570,
+                    "endTime": 1757633554190,
+                    "secondsFromStart": 8.33,
+                    "duration": 1620
+                  },
+                  {
+                    "role": "bot",
+                    "message": "could you specify the day you'd like to check availability for?",
+                    "time": 1757633556020.001,
+                    "endTime": 1757633559450,
+                    "secondsFromStart": 11.780001,
+                    "duration": 3109.9990234375,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "Yes. Do you have any availability for Friday?",
+                    "time": 1757633560670,
+                    "endTime": 1757633563410,
+                    "secondsFromStart": 16.43,
+                    "duration": 2740
+                  },
+                  {
+                    "toolCalls": [
+                      {
+                        "id": "call_EmexKErxbodQhdNQz7teBI1G",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Friday\"}"
+                        }
+                      }
+                    ],
+                    "role": "tool_calls",
+                    "message": "",
+                    "time": 1757633563864,
+                    "secondsFromStart": 19.795
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Let me check for availability on Friday for you. Hold on a moment. Okay. Let me check that for you.",
+                    "time": 1757633564820,
+                    "endTime": 1757633570500,
+                    "secondsFromStart": 20.58,
+                    "duration": 4960,
+                    "source": ""
+                  },
+                  {
+                    "role": "tool_call_result",
+                    "time": 1757633569280,
+                    "secondsFromStart": 25.211,
+                    "name": "calendarAvailability",
+                    "result": "Sure! We have several options open for Friday. If you're looking for something in the morning, there are slots at 9:00am, 9:30am, and 10:00am. Let me know if any of those work for you!",
+                    "metadata": {},
+                    "toolCallId": "call_EmexKErxbodQhdNQz7teBI1G"
+                  },
+                  {
+                    "role": "bot",
+                    "message": "We have several options open for Friday. 9 AM, 9 30 AM, and 10 AM. Do any of these times work for you?",
+                    "time": 1757633571430,
+                    "endTime": 1757633578370,
+                    "secondsFromStart": 27.19,
+                    "duration": 6930.0009765625,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "Not really. Do you have any availability for",
+                    "time": 1757633579930.002,
+                    "endTime": 1757633583150,
+                    "secondsFromStart": 35.690002,
+                    "duration": 2279.998046875
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Okay. Let me check that for you.",
+                    "time": 1757633586250,
+                    "endTime": 1757633589960,
+                    "secondsFromStart": 42.01,
+                    "duration": 3710,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "let's say, Wednesday.",
+                    "time": 1757633586869.997,
+                    "endTime": 1757633587830,
+                    "secondsFromStart": 42.629997,
+                    "duration": 960.0029296875
+                  },
+                  {
+                    "toolCalls": [
+                      {
+                        "id": "call_pVhUlsdSgU8nu5HB5gKaJ9TW",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Wednesday\"}"
+                        }
+                      }
+                    ],
+                    "role": "tool_calls",
+                    "message": "",
+                    "time": 1757633587331,
+                    "secondsFromStart": 43.262
+                  },
+                  {
+                    "role": "user",
+                    "message": "K.",
+                    "time": 1757633591670,
+                    "endTime": 1757633591950,
+                    "secondsFromStart": 47.43,
+                    "duration": 280
+                  },
+                  {
+                    "role": "tool_call_result",
+                    "time": 1757633592237,
+                    "secondsFromStart": 48.168,
+                    "name": "calendarAvailability",
+                    "result": "I checked Wednesday, but it looks like we’re fully booked that day. On Tuesday, though, we have several options. How about 9:30 AM, 11:00 AM, or 1:00 PM? Let me know what works best for you.",
+                    "metadata": {},
+                    "toolCallId": "call_pVhUlsdSgU8nu5HB5gKaJ9TW"
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Sorry. A few more seconds. Alright. Let me know if you'd like to explore other options or days.",
+                    "time": 1757633592300,
+                    "endTime": 1757633596980,
+                    "secondsFromStart": 48.06,
+                    "duration": 4680,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "So you checked?",
+                    "time": 1757633600630,
+                    "endTime": 1757633601610,
+                    "secondsFromStart": 56.39,
+                    "duration": 980
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Yes. I checked. Unfortunately, Wednesday is fully booked. However, there are slots available for Tuesday at 9 30 AM, 11 AM, and 1 PM. Let me know if any of these options work for you or",
+                    "time": 1757633602710,
+                    "endTime": 1757633613690,
+                    "secondsFromStart": 58.47,
+                    "duration": 10379.9912109375,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "Okay.",
+                    "time": 1757633612850,
+                    "endTime": 1757633613350,
+                    "secondsFromStart": 68.61,
+                    "duration": 500
+                  },
+                  {
+                    "role": "bot",
+                    "message": "you'd like",
+                    "time": 1757633613690,
+                    "endTime": 1757633614300,
+                    "secondsFromStart": 69.45,
+                    "duration": 610,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "No. How about Sunday?",
+                    "time": 1757633614219.996,
+                    "endTime": 1757633615440,
+                    "secondsFromStart": 69.979996,
+                    "duration": 1220.00390625
+                  },
+                  {
+                    "toolCalls": [
+                      {
+                        "id": "call_wXXtWd4c2zqTtnNb9wP1L5ub",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Sunday\"}"
+                        }
+                      }
+                    ],
+                    "role": "tool_calls",
+                    "message": "",
+                    "time": 1757633615124,
+                    "secondsFromStart": 71.055
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Okay. Let me check that for you.",
+                    "time": 1757633616139.994,
+                    "endTime": 1757633617580,
+                    "secondsFromStart": 71.899994,
+                    "duration": 1440.006103515625,
+                    "source": ""
+                  },
+                  {
+                    "role": "tool_call_result",
+                    "time": 1757633616538,
+                    "secondsFromStart": 72.469,
+                    "name": "calendarAvailability",
+                    "result": "No result returned.",
+                    "toolCallId": "call_wXXtWd4c2zqTtnNb9wP1L5ub"
+                  },
+                  {
+                    "role": "bot",
+                    "message": "I'm sorry. It seems there is no availability for Sunday. Would you like to check?",
+                    "time": 1757633618459.99,
+                    "endTime": 1757633622610,
+                    "secondsFromStart": 74.21999,
+                    "duration": 3920.010009765625,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "No. No. No. I checked for Sunday.",
+                    "time": 1757633621680,
+                    "endTime": 1757633623300,
+                    "secondsFromStart": 77.44,
+                    "duration": 1620
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Sorry for the confusion.",
+                    "time": 1757633624370.005,
+                    "endTime": 1757633625580,
+                    "secondsFromStart": 80.130005,
+                    "duration": 1209.9951171875,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "Trigger the 2 Sunday.",
+                    "time": 1757633627380,
+                    "endTime": 1757633628679.995,
+                    "secondsFromStart": 83.14,
+                    "duration": 1299.9951171875
+                  },
+                  {
+                    "toolCalls": [
+                      {
+                        "id": "call_18yYVe4ginRXcMwU7TeubMV3",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Sunday\"}"
+                        }
+                      }
+                    ],
+                    "role": "tool_calls",
+                    "message": "",
+                    "time": 1757633628345,
+                    "secondsFromStart": 84.276
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Okay. Let me check that for you.",
+                    "time": 1757633629480.005,
+                    "endTime": 1757633631260.004,
+                    "secondsFromStart": 85.240005,
+                    "duration": 1779.9990234375,
+                    "source": ""
+                  },
+                  {
+                    "role": "tool_call_result",
+                    "time": 1757633636361,
+                    "secondsFromStart": 92.292,
+                    "name": "calendarAvailability",
+                    "result": "I checked Sunday, but unfortunately there aren’t any times available. Looking at the week ahead, Monday and Tuesday have lots of openings throughout the day, Wednesday isn’t available at all, Thursday and Friday also have plenty of slots, and the weekend is closed. Would any day early in the week work for you?",
+                    "metadata": {},
+                    "toolCallId": "call_18yYVe4ginRXcMwU7TeubMV3"
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Unfortunately, Sunday does not have any slots available. However, Monday and Tuesday have plenty of openings throughout the day. Would either of those days work for you? Let me know. And I can provide more specific",
+                    "time": 1757633638340.006,
+                    "endTime": 1757633649900,
+                    "secondsFromStart": 94.100006,
+                    "duration": 9979.990234375,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "Yeah. My, um, Tuesday. I I would like to book on Tuesday.",
+                    "time": 1757633649350,
+                    "endTime": 1757633654140,
+                    "secondsFromStart": 105.11,
+                    "duration": 3320
+                  },
+                  {
+                    "role": "bot",
+                    "message": "Alright. Could you specify a time on Tuesday? That you'd like to book the appointment for? We have slots available at 9",
+                    "time": 1757633655360,
+                    "endTime": 1757633662070,
+                    "secondsFromStart": 111.12,
+                    "duration": 5680.0048828125,
+                    "source": ""
+                  },
+                  {
+                    "role": "user",
+                    "message": "Uh, 3 PM.",
+                    "time": 1757633661030,
+                    "endTime": 1757633661930,
+                    "secondsFromStart": 116.79,
+                    "duration": 900
+                  },
+                  {
+                    "toolCalls": [
+                      {
+                        "id": "call_fbOvIm5p0UCVZCbkMbc05HuS",
+                        "type": "function",
+                        "function": {
+                          "name": "bookingAppointment",
+                          "arguments": "{\"appTime\": \"Tuesday at 3 PM\"}"
+                        }
+                      }
+                    ],
+                    "role": "tool_calls",
+                    "message": "",
+                    "time": 1757633661501,
+                    "secondsFromStart": 117.432
+                  }
+                ],
+                "messagesOpenAIFormatted": [
+                  {
+                    "role": "system",
+                    "content": "User will either ask you for booking an appointment or for calendar availability. Any time the person is asking to check for availability, use AVAILABILITY SECTION and end up triggering the calendarAvailability tool after going through the preliminary steps of that section. Anytime the user wants to book an appointment, use APPOINTMENT BOOKING SECTION and end up triggering the bookingAppointment tool after going through the preliminary steps of that section.\n\n\n\n#APPOINTMENT BOOKING SECTION\n- Get time or date and time\n- If the person gives you a range like \"anytime from 12pm to 4pm\", then suggest a specific time in that range.\n- confirm the date/time with user\n- When the user responds positively to a specific time and says something like \"yes\" or \"yeah\" or \"that works\" or \"let's do that time\" or \"that's fine\" regarding a specific time and date, that means confirmed the exact time or date and time, do not ask for confirmation again but proceed to '[BOOK TRIGGER]'.\n\n[BOOK TRIGGER]\n- Trigg..."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Hello."
+                  },
+                  {
+                    "role": "user",
+                    "content": "Hey."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Hi there. How can I assist you to"
+                  },
+                  {
+                    "role": "user",
+                    "content": "I would like to check for availability."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "could you specify the day you'd like to check availability for?"
+                  },
+                  {
+                    "role": "user",
+                    "content": "Yes. Do you have any availability for Friday?"
+                  },
+                  {
+                    "role": "assistant",
+                    "tool_calls": [
+                      {
+                        "id": "call_EmexKErxbodQhdNQz7teBI1G",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Friday\"}"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "role": "tool",
+                    "tool_call_id": "call_EmexKErxbodQhdNQz7teBI1G",
+                    "content": "Sure! We have several options open for Friday. If you're looking for something in the morning, there are slots at 9:00am, 9:30am, and 10:00am. Let me know if any of those work for you!"
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Let me check for availability on Friday for you. Hold on a moment. Okay. Let me check that for you. We have several options open for Friday. 9 AM, 9 30 AM, and 10 AM. Do any of these times work for you?"
+                  },
+                  {
+                    "role": "user",
+                    "content": "Not really. Do you have any availability for"
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Okay. Let me check that for you."
+                  },
+                  {
+                    "role": "user",
+                    "content": "let's say, Wednesday."
+                  },
+                  {
+                    "role": "assistant",
+                    "tool_calls": [
+                      {
+                        "id": "call_pVhUlsdSgU8nu5HB5gKaJ9TW",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Wednesday\"}"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "role": "tool",
+                    "tool_call_id": "call_pVhUlsdSgU8nu5HB5gKaJ9TW",
+                    "content": "I checked Wednesday, but it looks like we’re fully booked that day. On Tuesday, though, we have several options. How about 9:30 AM, 11:00 AM, or 1:00 PM? Let me know what works best for you."
+                  },
+                  {
+                    "role": "user",
+                    "content": "K."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Sorry. A few more seconds. Alright. Let me know if you'd like to explore other options or days."
+                  },
+                  {
+                    "role": "user",
+                    "content": "So you checked?"
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Yes. I checked. Unfortunately, Wednesday is fully booked. However, there are slots available for Tuesday at 9 30 AM, 11 AM, and 1 PM. Let me know if any of these options work for you or"
+                  },
+                  {
+                    "role": "user",
+                    "content": "Okay."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "you'd like"
+                  },
+                  {
+                    "role": "user",
+                    "content": "No. How about Sunday?"
+                  },
+                  {
+                    "role": "assistant",
+                    "tool_calls": [
+                      {
+                        "id": "call_wXXtWd4c2zqTtnNb9wP1L5ub",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Sunday\"}"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "role": "tool",
+                    "tool_call_id": "call_wXXtWd4c2zqTtnNb9wP1L5ub",
+                    "content": "No result returned."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Okay. Let me check that for you. I'm sorry. It seems there is no availability for Sunday. Would you like to check?"
+                  },
+                  {
+                    "role": "user",
+                    "content": "No. No. No. I checked for Sunday."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Sorry for the confusion."
+                  },
+                  {
+                    "role": "user",
+                    "content": "Trigger the 2 Sunday."
+                  },
+                  {
+                    "role": "assistant",
+                    "tool_calls": [
+                      {
+                        "id": "call_18yYVe4ginRXcMwU7TeubMV3",
+                        "type": "function",
+                        "function": {
+                          "name": "calendarAvailability",
+                          "arguments": "{\"availabilityRequest\": \"Sunday\"}"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "role": "tool",
+                    "tool_call_id": "call_18yYVe4ginRXcMwU7TeubMV3",
+                    "content": "I checked Sunday, but unfortunately there aren’t any times available. Looking at the week ahead, Monday and Tuesday have lots of openings throughout the day, Wednesday isn’t available at all, Thursday and Friday also have plenty of slots, and the weekend is closed. Would any day early in the week work for you?"
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Okay. Let me check that for you. Unfortunately, Sunday does not have any slots available. However, Monday and Tuesday have plenty of openings throughout the day. Would either of those days work for you? Let me know. And I can provide more specific"
+                  },
+                  {
+                    "role": "user",
+                    "content": "Yeah. My, um, Tuesday. I I would like to book on Tuesday."
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "Alright. Could you specify a time on Tuesday? That you'd like to book the appointment for? We have slots available at 9"
+                  },
+                  {
+                    "role": "user",
+                    "content": "Uh, 3 PM."
+                  },
+                  {
+                    "role": "assistant",
+                    "tool_calls": [
+                      {
+                        "id": "call_fbOvIm5p0UCVZCbkMbc05HuS",
+                        "type": "function",
+                        "function": {
+                          "name": "bookingAppointment",
+                          "arguments": "{\"appTime\": \"Tuesday at 3 PM\"}"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "role": "tool",
+                    "tool_call_id": "call_fbOvIm5p0UCVZCbkMbc05HuS",
+                    "content": "Tool Result Still Pending But Proceed Further If Possible."
+                  }
+                ]
+              },
+              "call": {
+                "id": "9307cf46-34db-44a8-89ab-86ca4e4b65d7",
+                "orgId": "a2d84839-19c0-40d0-a12a-0deb72e79e12",
+                "createdAt": "2025-09-11T23:32:23.903Z",
+                "updatedAt": "2025-09-11T23:32:23.903Z",
+                "type": "inboundPhoneCall",
+                "cost": 0,
+                "monitor": {
+                  "listenUrl": "wss://phone-call-websocket.aws-us-west-2-backend-production1.vapi.ai/9307cf46-34db-44a8-89ab-86ca4e4b65d7/listen",
+                  "controlUrl": "https://phone-call-websocket.aws-us-west-2-backend-production1.vapi.ai/9307cf46-34db-44a8-89ab-86ca4e4b65d7/control"
+                },
+                "transport": {
+                  "provider": "vapi.sip",
+                  "callSid": "00ae2c26-e214-4f4f-bd54-3d5e69e950a5",
+                  "sbcCallSid": "202537074-3966622343-1655769495@msc1.382COM.COM"
+                },
+                "phoneCallProvider": "vapi",
+                "phoneCallProviderId": "00ae2c26-e214-4f4f-bd54-3d5e69e950a5",
+                "phoneCallTransport": "sip",
+                "phoneCallProviderDetails": {
+                  "sbcCallId": "202537074-3966622343-1655769495@msc1.382COM.COM"
+                },
+                "status": "ringing",
+                "assistantId": "e1181ec3-b167-4240-b305-676d71e06158",
+                "assistantOverrides": {
+                  "variableValues": {
+                    "cid": "202537074-3966622343-1655769495@msc1.382COM.COM",
+                    "account-sid": "c033b672-5b99-42ae-9ce2-b231e9a522fb",
+                    "forwarded-for": "64.125.111.10",
+                    "application-sid": "79d078c8-76b2-452a-99e0-ddd5abbf6269",
+                    "voip-carrier-sid": "a5569621-84ac-49cc-a8b8-11c7fb96b905",
+                    "originating-carrier": "382com"
+                  }
+                },
+                "phoneNumberId": "8676c0aa-a8cc-4970-9a96-68e861a7be69",
+                "customer": {
+                  "number": "+18669427110",
+                  "sipUri": "sip:+18669427110@44.229.228.186:5060"
+                }
+              },
+              "phoneNumber": {
+                "id": "8676c0aa-a8cc-4970-9a96-68e861a7be69",
+                "orgId": "a2d84839-19c0-40d0-a12a-0deb72e79e12",
+                "assistantId": "e1181ec3-b167-4240-b305-676d71e06158",
+                "number": "+14148777748",
+                "createdAt": "2025-04-07T11:14:43.034Z",
+                "updatedAt": "2025-09-02T21:20:47.361Z",
+                "name": "Unlabeled",
+                "provider": "vapi",
+                "status": "active",
+                "providerResourceId": "68ac25ce-e570-4c79-9eb8-2aaee577caf7"
+              },
+              "customer": {
+                "number": "+18669427110",
+                "sipUri": "sip:+18669427110@44.229.228.186:5060"
+              },
+              "assistant": {
+                "id": "e1181ec3-b167-4240-b305-676d71e06158",
+                "orgId": "a2d84839-19c0-40d0-a12a-0deb72e79e12",
+                "name": "n8n Workflow Test",
+                "voice": {
+                  "voiceId": "Elliot",
+                  "provider": "vapi"
+                },
+                "createdAt": "2025-09-02T21:15:47.539Z",
+                "updatedAt": "2025-09-07T11:41:59.803Z",
+                "model": {
+                  "model": "gpt-4o",
+                  "toolIds": [
+                    "dbdfb578-6200-48eb-8beb-1d22a4ffdad9",
+                    "e258451c-9ab9-453c-a031-265b32a3e9cc"
+                  ],
+                  "messages": [
+                    {
+                      "role": "system",
+                      "content": "User will either ask you for booking an appointment or for calendar availability. Any time the person is asking to check for availability, use AVAILABILITY SECTION and end up triggering the calendarAvailability tool after going through the preliminary steps of that section. Anytime the user wants to book an appointment, use APPOINTMENT BOOKING SECTION and end up triggering the bookingAppointment tool after going through the preliminary steps of that section.\n\n\n\n#APPOINTMENT BOOKING SECTION\n- Get time or date and time\n- If the person gives you a range like \"anytime from 12pm to 4pm\", then suggest a specific time in that range.\n- confirm the date/time with user\n- When the user responds positively to a specific time and says something like \"yes\" or \"yeah\" or \"that works\" or \"let's do that time\" or \"that's fine\" regarding a specific time and date, that means confirmed the exact time or date and time, do not ask for confirmation again but proceed to '[BOOK TRIGGER]'.\n\n[BOOK TRIGGER]\n- Trigger the 'bookingAppointment' tool and pass on the exact phrase of the time or date and time that the user confirmed the appointment for.\n\n\n#AVAILABILITY SECTION\n- Get day that the person wants to check availabiltiy for. \n- If they want to leave it broad like \"next week\", try and narrow it down to a specific day before triggering\n- When the user responds positively to a specific time and says something like \"yes\" or \"yeah\" or \"that works\" or \"let's do that time\" or \"that's fine\" regarding a specific time and date, that means confirmed the exact time or date and time, do not ask for confirmation again but proceed to 'AVAIL TOOL'.\n\n#AVAIL TOOL\n- Trigger calendarAvailability tool and pass along the exact phrase the user said on when he wants to check availability for.\n\nRULES\n\nSenior rules: \n- always wait for webhook response and talk based on the webhook response and not something of your own imagination.\n- if appointment or availability day or slot is not available acknowledge the fact that unfortunately it's not available before giving the availability. Never just randomly talk about another day when the user has asked for another day/time without giving the context that it's not available, otherwise the user might get upset as he has asked about another day."
+                    }
+                  ],
+                  "provider": "openai",
+                  "tools": [
+                    {
+                      "id": "dbdfb578-6200-48eb-8beb-1d22a4ffdad9",
+                      "createdAt": "2025-09-01T23:38:34.431Z",
+                      "updatedAt": "2025-09-11T23:32:15.057Z",
+                      "type": "function",
+                      "function": {
+                        "name": "bookingAppointment",
+                        "parameters": {
+                          "type": "object",
+                          "required": [
+                            "appTime"
+                          ],
+                          "properties": {
+                            "appTime": {
+                              "type": "string",
+                              "default": "",
+                              "description": "The phrase on date or date and time that the user wants to book the appointment for."
+                            }
+                          }
+                        },
+                        "description": "This tool is triggered when the user has expressed that he'd like to book an appointment."
+                      },
+                      "messages": [
+                        {
+                          "type": "request-start",
+                          "content": "yes please give me a sec",
+                          "blocking": false
+                        }
+                      ],
+                      "orgId": "a2d84839-19c0-40d0-a12a-0deb72e79e12",
+                      "server": {
+                        "url": "https://n8n.elitearchitects.ai/webhook-test/ba221fe8-1285-4a12-9dd9-42aee2effbc8"
+                      }
+                    },
+                    {
+                      "id": "e258451c-9ab9-453c-a031-265b32a3e9cc",
+                      "createdAt": "2025-09-01T23:37:28.343Z",
+                      "updatedAt": "2025-09-07T13:08:41.720Z",
+                      "type": "function",
+                      "function": {
+                        "name": "calendarAvailability",
+                        "parameters": {
+                          "type": "object",
+                          "required": [
+                            "availabilityRequest"
+                          ],
+                          "properties": {
+                            "availabilityRequest": {
+                              "type": "string",
+                              "default": "",
+                              "description": "The phrase the user said for when he/she would like to check availability for."
+                            }
+                          }
+                        },
+                        "description": "Trigger this tool to check for calendar availability."
+                      },
+                      "messages": [
+                        {
+                          "type": "request-start",
+                          "content": "okay let me check that for you",
+                          "blocking": false
+                        }
+                      ],
+                      "orgId": "a2d84839-19c0-40d0-a12a-0deb72e79e12",
+                      "server": {
+                        "url": "https://n8n.elitearchitects.ai/webhook-test/ba221fe8-1285-4a12-9dd9-42aee2effbc8"
+                      }
+                    }
+                  ]
+                },
+                "firstMessage": "Hello.",
+                "voicemailMessage": "Please call back when you're available.",
+                "endCallMessage": "Goodbye.",
+                "transcriber": {
+                  "model": "nova-2",
+                  "language": "en",
+                  "provider": "deepgram"
+                },
+                "variableValues": {
+                  "cid": "202537074-3966622343-1655769495@msc1.382COM.COM",
+                  "account-sid": "c033b672-5b99-42ae-9ce2-b231e9a522fb",
+                  "forwarded-for": "64.125.111.10",
+                  "application-sid": "79d078c8-76b2-452a-99e0-ddd5abbf6269",
+                  "voip-carrier-sid": "a5569621-84ac-49cc-a8b8-11c7fb96b905",
+                  "originating-carrier": "382com"
+                }
+              }
+            }
+          },
+          "webhookUrl": "https://n8n.elitearchitects.ai/webhook-test/ba221fe8-1285-4a12-9dd9-42aee2effbc8",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "GHL Subaccount ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Booking Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Availability Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get free slots of a calendar": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL Timezone": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Availability Request": {
+      "main": [
+        [
+          {
+            "node": "Availability Request Normalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get free slots of a calendar1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get Previous Day's Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get free slots of a calendar2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Message a model2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get Next Week's Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Get many contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many contacts": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Update a contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Potential Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Potential Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a contact": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many contacts1": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Format Date",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create or update a contact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Request": {
+      "main": [
+        [
+          {
+            "node": "Booking Request Normalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact1": {
+      "main": [
+        [
+          {
+            "node": "Format Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Phone Number": {
+      "main": [
+        [
+          {
+            "node": "GHL Timezone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appt Booking": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Target Day's Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL Calendar ID": {
+      "main": [
+        [
+          {
+            "node": "User Phone Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL Subaccount ID": {
+      "main": [
+        [
+          {
+            "node": "GHL API Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL Calendar Send Tag": {
+      "main": [
+        [
+          {
+            "node": "GHL Calendar ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL API Key": {
+      "main": [
+        [
+          {
+            "node": "GHL Calendar Send Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Request Normalization": {
+      "main": [
+        [
+          {
+            "node": "Get many contacts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Availability Request Normalization": {
+      "main": [
+        [
+          {
+            "node": "Get Target Day's Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Target Day's Availability": {
+      "main": [
+        [
+          {
+            "node": "Get free slots of a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Date": {
+      "main": [
+        [
+          {
+            "node": "Appt Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous Day's Availability": {
+      "main": [
+        [
+          {
+            "node": "Get free slots of a calendar1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Next Week's Availability": {
+      "main": [
+        [
+          {
+            "node": "Get free slots of a calendar2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "O2tIhF96UlMaRPwt"
+  },
+  "versionId": "ae3bb437-1cd4-412e-935b-2df1b66d26a6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "364b8cd8daeca8c9290f18201687f1866f0d84af8179902a3683572ae9f6cffa"
+  },
+  "id": "gUive7XUc6nwhuTc",
+  "tags": [
+    {
+      "createdAt": "2025-08-31T15:59:58.540Z",
+      "updatedAt": "2025-08-31T15:59:58.540Z",
+      "id": "anZjYmTjf2KURwr0",
+      "name": "agents"
+    },
+    {
+      "createdAt": "2025-08-30T23:12:22.007Z",
+      "updatedAt": "2025-08-30T23:12:22.007Z",
+      "id": "wJeMOnZLYlbD0gwy",
+      "name": "appointment"
+    }
+  ]
+}

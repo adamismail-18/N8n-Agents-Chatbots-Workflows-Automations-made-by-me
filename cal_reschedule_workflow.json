@@ -1,0 +1,114 @@
+{
+  "name": "Reschedule Appointment with Cal.com",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "reschedule-appointment",
+        "options": {}
+      },
+      "id": "webhook_entry",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "reschedule_appointment_hook"
+    },
+    {
+      "parameters": {
+        "url": "https://api.cal.com/v1/bookings",
+        "method": "GET",
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "email",
+              "value": "={{$json[\"email\"]}}"
+            }
+          ]
+        },
+        "authentication": "headerAuth"
+      },
+      "id": "get_booking",
+      "name": "Get Booking by Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.cal.com/v1/bookings/{{$json[\"id\"]}}/reschedule",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "\n{\n  \"newStartTime\": \"={{$json[\"newStartTime\"]}}\",\n  \"newEndTime\": \"={{$json[\"newEndTime\"]}}\"\n}\n"
+      },
+      "id": "reschedule_booking",
+      "name": "Reschedule Booking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "id": "return_result",
+      "name": "Return Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Booking by Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Booking by Email": {
+      "main": [
+        [
+          {
+            "node": "Reschedule Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reschedule Booking": {
+      "main": [
+        [
+          {
+            "node": "Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": []
+}

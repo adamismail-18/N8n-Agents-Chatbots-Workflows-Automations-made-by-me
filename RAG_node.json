@@ -1,0 +1,219 @@
+{
+  "name": "RAG node",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1k_v_dxfV01ql9jvCkArqppD_j7V3kt14",
+          "mode": "list",
+          "cachedResultName": "Bodla EyeCare Clinic Profile",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1k_v_dxfV01ql9jvCkArqppD_j7V3kt14"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -540,
+        -80
+      ],
+      "id": "7b8e2896-4c4a-4dfd-8c4a-0ca8c6c473d3",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "oLfmp0dQM68AGZHT",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1cuxjgv9LWiNZUEcSbCSuS1jgg62WiGQQ",
+          "mode": "list",
+          "cachedResultName": "Bodla EyeCare Clinic Profile.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1cuxjgv9LWiNZUEcSbCSuS1jgg62WiGQQ/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -340,
+        -80
+      ],
+      "id": "890fb2d5-6008-4e95-9b63-a819cc4ad954",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "oLfmp0dQM68AGZHT",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "bodlaeyecareclinic",
+          "mode": "list",
+          "cachedResultName": "bodlaeyecareclinic"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        -164,
+        -80
+      ],
+      "id": "06fd4a84-6563-4a07-b4ff-6e025cc2c464",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "FhV1hLrqLFbUvy3u",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -180,
+        140
+      ],
+      "id": "e423f365-ae26-43e8-acdd-532127070e11",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "ljbGaCV7SP4WwY66",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "File name",
+                "value": "={{ $('Google Drive').item.json.name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        142.5
+      ],
+      "id": "f0c3f7b2-a813-40ce-b7e5-7e00492568f2",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkSize": 1200,
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        28,
+        340
+      ],
+      "id": "85a0e9dc-9a63-41e9-9385-ad5915536ca9",
+      "name": "Recursive Character Text Splitter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8639d3c8-700e-42ce-a2b4-4a96bb28ec1a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6118f98afadc52aacaeff4eab8ed70dd1b090d08eef6ce3a082128d01a3bf381"
+  },
+  "id": "Vku4mGc7UWZ509wz",
+  "tags": []
+}

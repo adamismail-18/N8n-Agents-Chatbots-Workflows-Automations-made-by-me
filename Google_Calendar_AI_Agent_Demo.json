@@ -1,0 +1,324 @@
+{
+  "name": "Google Calendar AI Agent Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "b0399368-6d2f-43fb-962d-165e0bdb754f",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "96f720a5-80df-48e0-89ca-c651ead27439",
+      "name": "Webhook",
+      "webhookId": "b0399368-6d2f-43fb-962d-165e0bdb754f"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\nYou are an AI Scheduling Assistant with access to Google Calendar. Your job is to book, reschedule, or cancel appointments according to the instructions and variables provided.\n\n# Tools Available\n- Book Appointment: Book a new appointment\n- Get appointment: Retrieve an appointment (find by time)\n- Update appointment: Reschedule an appointment (find by time, update to new time)\n- Cancel appointment: Cancel an appointment (find by time, cancel)\n- Check Availability: Check availability in given time frame\n\n# Variables Provided\n- action: \"booking\", \"reschedule\", \"check availability\", or \"cancel\"\n\n- booking_time: The time for booking, cancellation, or the original time to be rescheduled (format: ISO 8601 or standard calendar time)\n\n- reschedule_time: The new time to reschedule to (only present if action = \"reschedule\")\n\n- availability_time: The time or time range to check for availability (only present if action = \"check availability\")\n\n\n# Context\nThe lead's request:\n- Action: {{ $json.body.args.action }}\n- Booking Time: {{ $json.body.args.booking_time }}\n- Reschedule Time: {{ $json.body.args.reschedule_time }}\n- Availability: {{ $json.body.args.availability_time }}\n\nLead Details:\n- Name: {{ $json.body.args.name }}\n- Email: {{ $json.body.args.email }}\n- Phone Number: {{ $json.body.args.phone }}\n\n# Instructions\n\n1. **If `action` is \"check availability\":**\n   - Use `Check Availability` for the provided `availability_time`.\n   - Report clearly whether the slot or range is available or not. If they asked what times are available, provide two time ranges at different parts of the day, closest times possible. Eg, Monday between 10am and 1pm or Tuesday between 1pm and 4pm.\n\n2. **If `action` is \"booking\":**\n   - Use `Check Availability` for the requested `booking_time`.\n   - If available, use `Book Appointment` to book an appointment at `booking_time`.\n   - If not available, report: \"The requested time is not available. Please choose another time.\"\n\n3. **If `action` is \"cancel\":**\n   - Use `Get Appointment` to find the appointment at `booking_time`.\n   - If found, use `Cancel Appointment` to cancel that appointment.\n   - If not found, report: \"No appointment found at the specified time to cancel.\"\n\n4. **If `action` is \"reschedule\":**\n   - Use `Get Appointment` to find the appointment at `booking_time`.\n   - If found, use `Check Availability` for the desired `reschedule_time`.\n   - If the new time is available, use `Update Appointment` to move the appointment to `reschedule_time`.\n   - If not available, report: \"The requested reschedule time is not available. Please choose another time.\"\n   - If original appointment not found, report: \"No appointment found at the specified time to reschedule.\"\n\n# Output\nAlways confirm the result of your action:\n- For bookings: \"Appointment successfully booked at [time].\"\n- For cancellations: \"Appointment at [time] cancelled.\"\n- For rescheduling: \"Appointment rescheduled from [booking_time] to [reschedule_time].\"\n- For errors: \"No appointment found at [booking_time] to [action].\"\n- For availability: \"The time slot at [availability_time] is available.\" or \"The time slot at [availability_time] is not available.\"\n\n# Example Inputs & Expected Flows\n\n## Check Availability Example\n- action: \"check availability\"\n- availability_time: \"2025-05-23T10:00:00\"\n→ Check if 10:00 AM is free, report result.\n\n## Book Example\n- action: \"booking\"\n- booking_time: \"2025-05-23T10:00:00\"\n→ Check availability, if available, book at 10:00 AM, confirm.\n\n## Cancel Example\n- action: \"cancel\"\n- booking_time: \"2025-05-23T10:00:00\"\n→ Find appointment at 10:00 AM, cancel if found, confirm.\n\n## Reschedule Example\n- action: \"reschedule\"\n- booking_time: \"2025-05-23T10:00:00\"\n- reschedule_time: \"2025-05-23T11:30:00\" (if not provided, default check within next 3 days)\n→ Find appointment at 10:00 AM, check availability at 11:30 AM, if free, move to 11:30 AM, confirm.\n\n\n# Tone\nKeep instructions, confirmations, and error messages clear and direct.\n\n# Notes\n- All timezones provided are Australia/Sydney timezone unless otherwise stated.\n- All bookings are 30 minutes unless otherwise stated\n- When checking availability, only check for times within the next 3 days or this week, unless otherwise stated.\n- Always check availability before booking or rescheduling.\n- Never modify or cancel an appointment unless you are sure you have identified the correct event.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        220,
+        0
+      ],
+      "id": "20a6a91a-4852-4587-b124-bee202b9a3ad",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        220
+      ],
+      "id": "523a837c-bc72-4dc0-91cb-32504b22574f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "G9sa5N9MvRuBZXt8",
+          "name": "Google Gemini(PaLM) API Nebula AI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "c_3a188d270d2a5db4981482b6f70c6085c5e8a216b6e7412f6c0c6dc4e6b02dc9@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Test Calendar"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', ``, 'string') }}"
+          ],
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        600,
+        220
+      ],
+      "id": "177caf8c-117d-4f73-8414-77a8a1fdb508",
+      "name": "Book Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "B18GUjIFrGggKsXS",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "c_3a188d270d2a5db4981482b6f70c6085c5e8a216b6e7412f6c0c6dc4e6b02dc9@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Test Calendar"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        440,
+        220
+      ],
+      "id": "d39f9a97-8b92-41ff-9046-ed8d7c2f9cd7",
+      "name": "Get Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "B18GUjIFrGggKsXS",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "c_3a188d270d2a5db4981482b6f70c6085c5e8a216b6e7412f6c0c6dc4e6b02dc9@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Test Calendar"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        280,
+        220
+      ],
+      "id": "bc7a8940-3575-4ac4-a64b-49e4e5642588",
+      "name": "Cancel Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "B18GUjIFrGggKsXS",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "c_3a188d270d2a5db4981482b6f70c6085c5e8a216b6e7412f6c0c6dc4e6b02dc9@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Test Calendar"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "updateFields": {
+          "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+          "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        100,
+        220
+      ],
+      "id": "961b1191-3b8f-4a78-9730-95820f28f2f2",
+      "name": "Update Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "B18GUjIFrGggKsXS",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [
+        600,
+        0
+      ],
+      "id": "289f8e9e-ffd6-4f4e-9b5a-3928b4c300a6",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "c_3a188d270d2a5db4981482b6f70c6085c5e8a216b6e7412f6c0c6dc4e6b02dc9@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Test Calendar"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start_Time', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End_Time', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        220
+      ],
+      "id": "e9b27860-039a-4c58-9058-f953e1a1c12e",
+      "name": "Check Availability",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "B18GUjIFrGggKsXS",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ea26160f-54c7-478b-8cb5-923144cab009",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f13412e89caca0b703a665a54703d8748feece2cc60ab9208eeb852b7090ed44"
+  },
+  "id": "H4nWdustb4hqAIMM",
+  "tags": [
+    {
+      "createdAt": "2025-03-18T08:42:37.993Z",
+      "updatedAt": "2025-03-18T08:42:37.993Z",
+      "id": "sqnXuuwZGbHRFSXF",
+      "name": "Appointment"
+    }
+  ]
+}

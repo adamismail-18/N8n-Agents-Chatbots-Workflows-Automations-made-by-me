@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "phone": {
+      "type": "string",
+      "description": "Phone number of caller"
+    },
+    "reschedule_time": {
+      "type": "string",
+      "description": "Desired time to reschedule booking to in ISO 8601 format Australia/Sydney timezone"
+    },
+    "service": {
+      "type": "string",
+      "description": "Desired service the caller wishes to book for",
+      "enum": [
+        "New Patient Exam, Clean & X-Rays",
+        "Routine Check-up & Clean",
+        "Emergency Dental Visit",
+        "Orthodontics Consultation",
+        "Teeth Whitening Consultation"
+      ]
+    },
+    "action": {
+      "type": "string",
+      "description": "",
+      "enum": [
+        "booking",
+        "cancel",
+        "reschedule",
+        "check availability"
+      ]
+    },
+    "last_name": {
+      "type": "string",
+      "description": "Last name of caller"
+    },
+    "booking_time": {
+      "type": "string",
+      "description": "The desired time for booking, or the original time of booking to be rescheduled or canceled in ISO 8601 Australia/Sydney timezone format"
+    },
+    "first_name": {
+      "type": "string",
+      "description": "First name of caller"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address of caller. IT MUST BE IN THE FORMAT emailid@domain.suffix example: john@gmail.com or steve@apple.com"
+    },
+    "availability_time": {
+      "type": "string",
+      "description": "Day and time or range of date for availability"
+    }
+  },
+  "required": [
+    "action",
+    "service",
+    "first_name",
+    "last_name",
+    "phone",
+    "email"
+  ]
+}

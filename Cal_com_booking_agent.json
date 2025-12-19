@@ -1,0 +1,1236 @@
+{
+  "name": "Cal.com booking agent",
+  "nodes": [
+    {
+      "parameters": {
+        "toolDescription": "=Always call this tool, when the user is asking to book in a time. Gets all availability in my Calendly for the specific times requested by the user.\n\nIf this returns an empty response, then there are no bookings at that time. If it returns slots, then there is availability. Double check the slot times, since they are in UTC+10, we are operating in Australia/Brisbane Time zone. The time right now is {{ $now }}",
+        "url": "https://api.cal.com/v2/slots/available",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "startTime"
+            },
+            {
+              "name": "endTime"
+            },
+            {
+              "name": "eventTypeId",
+              "valueProvider": "fieldValue",
+              "value": "[REPLACE WITH YOUR EVENT ID]"
+            },
+            {
+              "name": "timeZone",
+              "valueProvider": "fieldValue",
+              "value": "[REPLACE WITH YOUR TIMEZONE]"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "Bearer [REPLACE WITH YOUR API KEY]"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -1340,
+        500
+      ],
+      "id": "2d1c550f-4389-4795-b63e-d2120952a874",
+      "name": "Availability"
+    },
+    {
+      "parameters": {
+        "content": "Only Triggers Automation when Voice Agent uses Tool Call, and makes sure that the call is still in progress.",
+        "height": 280,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3380,
+        520
+      ],
+      "id": "a12f3f95-bb42-4291-b1cd-8e9588d35d9a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Grabs last 20 Messages from Transcript",
+        "height": 280,
+        "width": 200,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2880,
+        500
+      ],
+      "id": "eb0e6a67-d267-48cb-b051-ec6c8ff2ef0e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\":\"{{ $('Webhook').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"{{ $('Check Availability').item.json.output }}\"\n        }\n    ]\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        420
+      ],
+      "id": "54c33158-e92d-4f61-b418-b743ad51cb98",
+      "name": "Not Available"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "70daacda-4673-4cf9-8c0d-7e426e9a6d5d",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3360,
+        620
+      ],
+      "id": "adb5cf80-ef0b-4427-a7c9-99b9e61ac7b2",
+      "name": "Webhook",
+      "webhookId": "70daacda-4673-4cf9-8c0d-7e426e9a6d5d"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -1700,
+        500
+      ],
+      "id": "0f01f588-960d-4108-a3ea-149a22fa6118",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XfcQJ3wZJJmdQ2T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Call AI Agent to Check Current Availability Through cal.com & Return All Results for that specific time",
+        "height": 320,
+        "width": 540,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1860,
+        120
+      ],
+      "id": "9af52bf2-b8f0-4ca5-9ea8-dbef1f104ede",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\":\"{{ $('Webhook').item.json.body.message.toolCallList[0].id }}\",\n            \"result\": \"{{ $('Check Availability').item.json.output }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        20
+      ],
+      "id": "fbcf45f9-8032-4009-a0b4-55f128f0348e",
+      "name": "Available"
+    },
+    {
+      "parameters": {
+        "content": "Use code to see if time is available or not",
+        "height": 260,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -920,
+        160
+      ],
+      "id": "57a4d0f0-1726-401a-9849-a1769255645d",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -800,
+        1980
+      ],
+      "id": "f3ffdb0f-200b-4032-98a8-cfbdd9df8bbf",
+      "name": "OpenAI Chat Model2"
+    },
+    {
+      "parameters": {
+        "content": "Reads Through Transcript to Determine correct Email",
+        "height": 240,
+        "width": 380,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1880,
+        740
+      ],
+      "id": "c24967bf-7027-4732-8636-360a0d957071",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook').item.json.body.message.type }}",
+                    "rightValue": "tool-calls",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "=Tool Call"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bd3da765-53be-4ab9-b875-12d180da80a9",
+                    "leftValue": "={{ $('Webhook').item.json.body.message.status }}",
+                    "rightValue": "ended",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "End Call Analysis"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2400,
+        620
+      ],
+      "id": "e3abf409-b10b-4424-8083-476f104d69bf",
+      "name": "If Tool Call or Post Call Analysis"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appohUjMsrMYRUAfS",
+          "mode": "list",
+          "cachedResultName": "Bookings With Ali",
+          "cachedResultUrl": "https://airtable.com/appohUjMsrMYRUAfS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblnJHNmSyJboW08F",
+          "mode": "list",
+          "cachedResultName": "Bookings",
+          "cachedResultUrl": "https://airtable.com/appohUjMsrMYRUAfS/tblnJHNmSyJboW08F"
+        },
+        "filterByFormula": "=({Phone Number} = '{{ $('Webhook').item.json.body.message.call.customer.number }}')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -2100,
+        780
+      ],
+      "id": "5e7c68a0-b5f2-4aa3-9373-6506c008f6a7",
+      "name": "Searches Call Records"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Searches Call Records').item.json.Transcript }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Extract and normalize the email addresses from the following content.\n\nReturn the emails in JSON format: {\n  \"emails\": [\n    {\n      \"email\": \"email1@example.com\",\n      \"reference_email\": \"<the initial email writing before extraction>\"\n    }\n  ]\n}.\nThose emails have been provided via speech-to-text. Consider this while normalizing as they can contain extras such as filler words.\nIf no email is found, return an empty JSON object: {}.\nAny time there is an 'o' in between a group of numbers, assume it is the number '0'.\nOnly return the JSON as plain text (No markdown)."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -1020,
+        1480
+      ],
+      "id": "239182fc-d047-4b48-88a6-952e1c4333c3",
+      "name": "Email Analyser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Searches Call Records').item.json.Transcript }}",
+        "options": {
+          "systemMessage": "=Summarise the input text provided, such that details the name of the user, the date that they are booking, the time that they are booking, and their phone number. Use that information to complete the SendEmailMessage tool.\n\nThe current date is: {{ $now }}\n\nThe user's phone number is: {{ $('Searches Call Records').item.json['Phone Number'] }}\n\nYour final response should ALWAYS be in the format: Name,Date,Time,Phone Number.\n\nThe date should be in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ), Also, because we are in Australia/Brisbane, we are 10 hours ahead of UTC timezone which is what is used, so please make sure to factor that in when making the final date booking. For example, if a user wants to make a booking for a day at 1PM, the corresponding time should be 10 hours subtracted. since we're UTC+10"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -680,
+        1600
+      ],
+      "id": "3ec20a60-5ace-4b71-b6ca-09912e54ee9e",
+      "name": "Sends Confirmation Email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cal.com/v2/bookings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer [REPLACE WITH YOU CAL.COM API]"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "cal-api-version",
+              "value": "2024-08-13"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"attendee\": {\n    \"name\": \"{{ $json.extractedValues[0] }}\",\n    \"timeZone\": \"[REPLACE WITH YOUR TIME ZONE]\",\n    \"email\": \"{{ $json.email }}\",\n    \"phoneNumber\": \"{{ $json.extractedValues[2] }}\"\n  },\n  \"eventTypeId\": [REPLACE WITH YOUR EVENT ID],\n  \"start\": \"{{ $json.extractedValues[1] }}\"\n}\n\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        100,
+        1760
+      ],
+      "id": "611a0b23-0ac1-409d-be5d-574640973fa5",
+      "name": "Creates Booking"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.transcript }}",
+        "options": {
+          "systemMessage": "=# Role\nYou are a highly skilled and experienced AI assistant with expertise in booking systems and natural language processing. Your role is to accurately understand user requests, check availability using the provided tools, and provide clear and concise responses to help users book their desired time slots.\n\n# Task\nAssist the user in booking a time slot by following these steps:\n1. Analyze the user's request to determine the desired date and time.\n2. Format the date and time properly for the start_time and end_time parameters in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ), adjusting for the UTC timezone. We are in Australia -> Queensland/Brisbane, so we are UTC+10.\n3. Use the \"Availability\" Tool to check for available time slots, providing a maximum of 3 options closest to the user's requested start date.\n4. If there is availability, format the response to the user mentioning only the available times in AEST (Queensland/Brisbane) timezone.\n5. If there is no availability, inform the user that there are no available time slots for the requested date and time.\n6. Call the UserCreation tool and provide all relevant information about the user and their booking request.\n7. If the user wants to cancel/reschedule their booking, proceed to ask them for the original booking details (as this would be their second or third time calling), and once you have confirmed those booking details, call the UserInfo tool to update their information inside of a CRM.\n8. If there is booking availability at the desired time for the user, then only return that booking time, do not provide alternatives.\n9. If the user requests to reschedule his booking, first, check to make sure that the new booking time is available using the \"Availability\" tool (the tool will return the available times) empty if not times, if it is not available, then do not call the \"UserInfo\" tool. If the time is available, then proceed to call the UserInfo tool with all the details. Do not output the google link, or ask for new availability options.\n\n# Specifics\n- Your accurate understanding of the user's request and clear communication of available time slots is crucial to providing a seamless booking experience.\n- Ensure that the date and time are properly formatted for the Availability Tool, taking into account the UTC timezone difference.\n- When providing available time slots to the user, convert them to AEST (Queensland/Brisbane) timezone for their convenience.\n- Provide as much detail as possible to the UserCreation tool to ensure a comprehensive record of the user and their booking request.\n\n# Context\nOur company offers a booking system that allows users to reserve time slots for various services. Your role in assisting users with their booking requests is essential for maintaining a positive user experience and ensuring the smooth operation of our booking system. By accurately interpreting user requests, checking availability, and providing clear responses, you directly contribute to the satisfaction of our users and the success of our business.\n\n# Examples\n## Example 1\nQ: [{\"role\":\"bot\",\"message\":\"Hi. This is Ali's virtual assistant. How can I help you?\"},{\"role\":\"user\",\"message\":\"Hey. I was looking to reschedule my appointment.\"},{\"role\":\"bot\",\"message\":\"Sure. Could you please provide me with your original booking details? Such as your name and the date and time of your appointment?\"},{\"role\":\"user\",\"message\":\"Yes. So I'd like to change my booking from 1 PM tomorrow to 2 PM tomorrow. Is that possible?\"},{\"role\":\"bot\",\"message\":\"Just to confirm, your original booking is at 1 PM tomorrow. And you would like to reschedule it to 2 PM tomorrow. Correct?\"},{\"role\":\"...\nA: **First**, check the availabiltiy using the \"Availability\" tool, if there is a time slot, proceed to reschedule the booking using the \"UserInfo\" tool. The time that they originally had was 2025-03-04T03:00:00.000, now it is 2025-03-04T04:00:00.000\n\n# Notes\n- Only include the available times in AEST (Queensland/Brisbane) timezone when responding to the user.\n- If there are no available time slots, clearly inform the user and do not provide any times in the response.\n- Ensure that all relevant information about the user and their booking request is provided to the UserCreation tool.\n- Format the response to the user with as few numbers as possible, focusing on the available times in a clear and concise manner.\n- ALWAYS format the output, starting with \"There seems to be availability\" if there is availability.\n- When formatting your response, make sure to be concise and logical, as if you were outputing information to say to a user, it should be short such as \"There seems to be availability at X, X and X, which works best for you?\" Keep all sentences in 1 line.\n\n\n\nThe current date is: {{ $now }}, use this information to understand what days correspond to days in the week.\n\nThe user's phone number is: {{ $('Webhook').item.json.body.message.call.customer.number }}\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1660,
+        240
+      ],
+      "id": "10ee573f-f591-4bd8-a3e4-3a08ff2574ee",
+      "name": "Check Availability"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n \"Run Once For All Items\" function\nconst items = $('Check Availability').all();\nconst updatedItems = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = { ...items[i] };\n  const availabilityText = item.json.output; \n  // Adjust this key if your availability text is stored differently\n  \n  if (availabilityText.includes(\"There seems to be availability\")) {\n    item.json.availabilityStatus = \"Available\";\n  } else {\n    item.json.availabilityStatus = \"Not-Available\";\n  }\n  \n  updatedItems.push(item);\n}\n\nreturn updatedItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        240
+      ],
+      "id": "1eb557f3-1886-4620-be56-d4acfb43393e",
+      "name": "Checks If Available"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "18156d81-c184-4112-8b67-6c6823baeb06",
+              "leftValue": "={{ $json.availabilityStatus }}",
+              "rightValue": "Available",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -500,
+        240
+      ],
+      "id": "c529bf7f-084f-45fd-a1ba-c961fbfb4fd6",
+      "name": "If Available"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appohUjMsrMYRUAfS",
+          "mode": "list",
+          "cachedResultName": "Bookings With Ali",
+          "cachedResultUrl": "https://airtable.com/appohUjMsrMYRUAfS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblnJHNmSyJboW08F",
+          "mode": "list",
+          "cachedResultName": "Bookings",
+          "cachedResultUrl": "https://airtable.com/appohUjMsrMYRUAfS/tblnJHNmSyJboW08F"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone Number": "={{ $('Webhook').item.json.body.message.call.customer.number }}",
+            "Transcript": "={{ $('Edit Fields').item.json.transcript }}"
+          },
+          "matchingColumns": [
+            "Phone Number"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date of Booking",
+              "displayName": "Date of Booking",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Time of Booking",
+              "displayName": "Time of Booking",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Time Change",
+              "displayName": "Time Change",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Transcript",
+              "displayName": "Transcript",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -1140,
+        240
+      ],
+      "id": "d8201678-cb9c-4710-935a-6e369c848e1e",
+      "name": "Adds Parsed Transcript"
+    },
+    {
+      "parameters": {
+        "jsCode": "function processCommaInput(inputString) {\n  return inputString.split(',')\n    .map(part => part.trim())\n    .filter(part => part !== '');\n}\n\nfunction extractEmail(emailData) {\n  try {\n    const parsed = JSON.parse(emailData);\n    if (parsed.emails?.[0]?.email) {\n      return parsed.emails[0].email;\n    }\n  } catch (e) {\n    console.error('Email parsing error:', e);\n  }\n  return null; // Return null if no email found\n}\n\n// Process comma-separated input\nconst rawInput = $input.first().json.output;\nconst extractedValues = processCommaInput(rawInput);\n\n// Process email input\nconst emailInput = $('Email Analyser').first().json.text;\nconst extractedEmail = extractEmail(emailInput);\n\n// Combine results into proper JSON structure\nreturn {\n  json: {\n    extractedValues,\n    email: extractedEmail\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        1640
+      ],
+      "id": "398f1179-33a1-48ed-a30c-78b1d5bf6c45",
+      "name": "Returns Name, Email, Phone Number & Start Date"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Searches Call Records').item.json.Transcript }}",
+        "options": {
+          "systemMessage": "=Extract all relevant information from the Airtable Field, and pick out all the revelvant infromation to determine what meeting the user has made a cancellation for and use the SendEmail tool.\n\nAlways use the GMail tool to send the confirmation email."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -920,
+        660
+      ],
+      "id": "dc5899df-9547-440c-b8f8-07c031c68a56",
+      "name": "Sends Cancelled Booking Confirmation"
+    },
+    {
+      "parameters": {
+        "name": "UserCreation",
+        "description": "=Role\nExpert in extracting user details from conversations for CRM systems.\n\nTask\nExtract name, booking date/time, and phone number from transcripts.\n\nFor booking changes, include original and new times.\n\nStructure output clearly. Flag missing data.\n\nKey Requirements\nAccuracy is critical for CRM integrity and customer service.\n\nHighlight gaps (e.g., \"Phone: Not provided\").\n\nExamples\nInput: \"Hi, I’m John Smith. Book tomorrow at 3 PM. Phone 123-456-7890.\"\nOutput:\nName: John Smith\nDate: Tomorrow\nTime: 3 PM\nPhone: 123-456-7890\n\nInput: \"I’m Sarah Johnson. Change my Tue 10 AM booking to Wed 2 PM. Phone 987-654-3210.\"\nOutput:\nName: Sarah Johnson\nOriginal: Tue 10 AM\nNew: Wed 2 PM\nPhone: 987-654-3210\n\nNotes\nUse structured format.\n\nInclude both times for changes.\n\nMandatory fields: Name, Date (In ISO 8601 UTC+10 format), Time, Phone.\n\nMake sure to specify if the user is looking to cancel a booking/reschedule, if they are not, ignore this.",
+        "workflowId": {
+          "__rl": true,
+          "value": "WT2lJPzCw5uGdAGX",
+          "mode": "list",
+          "cachedResultName": "Child Agent: CRM User Creation"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        520
+      ],
+      "id": "2e36444d-45a7-4f12-92f6-a9cae44b93b1",
+      "name": "UserInfo"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        1680
+      ],
+      "id": "ba8b5d43-1c4f-4db6-93e4-04507660360e",
+      "name": "DeepSeek Chat Model"
+    },
+    {
+      "parameters": {
+        "sendTo": "ali@neurov.ai",
+        "subject": "New Appointment Booking",
+        "emailType": "text",
+        "message": "={{ $fromAI(\"bookingDetails\",\"This should contain all the details for the booking (time, date and purpose) for an easy to read/user friendly email format\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        1980
+      ],
+      "id": "2a4f322b-5c5d-4438-a2f5-44d1c2712999",
+      "name": "Gmail1",
+      "webhookId": "71c0fb43-e70f-4bac-b7ae-b2a1dc2d3767"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n JavaScript code\n * This function processes the input data and returns an array of objects\n * without the first message and without specific time-related fields\n */\n\n// Check if items is defined and has elements\nif (items && items.length > 0) {\n  // Get the messages array from the first item\n  let messages;\n  try {\n    messages = items[0].json.body.message.artifact.messages;\n  } catch (error) {\n    // If path doesn't exist, return the original items\n    return items;\n  }\n\n  // Check if messages is an array\n  if (Array.isArray(messages) && messages.length > 0) {\n    // Make a deep copy of the messages to avoid modifying the original\n    let processedMessages = JSON.parse(JSON.stringify(messages));\n    \n    // Remove the first message\n    processedMessages.shift();\n    \n    // Create a new array of items with the processed messages\n    // Only keeping the role and message fields\n    return processedMessages.map(message => {\n      // Create a new object with only the fields we want to keep\n      const simplifiedMessage = {\n        role: message.role,\n        message: message.message\n      };\n      \n      // If content exists, keep it too (some messages use content instead of message)\n      if (message.content !== undefined) {\n        simplifiedMessage.content = message.content;\n      }\n      \n      // If there are tool calls, keep those too\n      if (message.toolCalls !== undefined) {\n        simplifiedMessage.toolCalls = message.toolCalls;\n      }\n      \n      return {\n        json: simplifiedMessage\n      };\n    });\n  }\n}\n\n// If we couldn't process it properly, return the original items\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3100,
+        620
+      ],
+      "id": "bbf3fa62-a812-4f38-902d-6271d544fc89",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "role",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -2840,
+        620
+      ],
+      "id": "5a930ead-0621-47d2-ba2d-bd89de80ca2d",
+      "name": "All Items into 1 Bundle"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6c3b2857-fdac-42db-80ee-55cbf08a4ac5",
+              "name": "transcript",
+              "value": "={{ $json.role }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2600,
+        620
+      ],
+      "id": "4a32f2a2-d7d6-4f12-813c-9e50acc5f987",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -1880,
+        1080
+      ],
+      "id": "ae585727-2f0b-43b0-a902-d95ae78f8996",
+      "name": "DeepSeek Chat Model1"
+    },
+    {
+      "parameters": {
+        "subject": "Appointment Cancelled",
+        "emailType": "text",
+        "message": "={{ $fromAI(\"cancelledBooking\",\"Should present a nice, easy to read format for the user to see what meeting has been cancelled\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -820,
+        880
+      ],
+      "id": "dff3edb3-e37c-412e-a720-7761b9f60cc6",
+      "name": "SendEmail",
+      "webhookId": "32a8ff47-cf61-4a99-a3df-a24e02c8a8ec"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -980,
+        860
+      ],
+      "id": "bae71adb-ccaa-452c-be37-f9b5365a92da",
+      "name": "OpenAI Chat Model1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "Cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cancel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b29fc498-589d-4d48-8731-51596af76664",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "Not-Cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not-Cancel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2c7839b4-96dc-4d3d-bc2c-eb762572984f",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "Reschedule",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reschedule"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1340,
+        960
+      ],
+      "id": "ae93bf94-a5c0-4650-aa83-6e369c988897",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "subject": "Appointment Rescheduled",
+        "emailType": "text",
+        "message": "={{ $fromAI(\"reschedulefBooking\",\"Should present a nice, easy to read format for the user to see what meeting has been rescheduled\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -620,
+        1280
+      ],
+      "id": "a1eb67be-1161-4ee5-ae76-e2d8a0d842d9",
+      "name": "SendEmail1",
+      "webhookId": "32a8ff47-cf61-4a99-a3df-a24e02c8a8ec"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -820,
+        1280
+      ],
+      "id": "a5624e26-8ead-42b1-a06e-2bc984f870d7",
+      "name": "OpenAI Chat Model3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Searches Call Records').item.json.Transcript }}",
+        "options": {
+          "systemMessage": "=Extract all relevant information from the Airtable Field, and pick out all the revelvant infromation to determine what meeting the user has made a reschedule for and use the SendEmail tool.\n\nAlways use the GMail tool to send the confirmation email."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -800,
+        1080
+      ],
+      "id": "57f54410-73e1-4c3f-9c20-28b014b06c4a",
+      "name": "Sends Rescheduling Booking Confirmation1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Transcript }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Determine if the user is cancelling, reschedule their booking or not. If the user has mentioned to cancel their booking, return the output \"Cancel\", if the user if rescheduling their booking, return \"Rescheduled.\" otherwise, return \"Not-Cancel\". Do not return anything else, but those words."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -1820,
+        840
+      ],
+      "id": "2fcf78c0-9629-40de-8fad-61c944bcf214",
+      "name": "If User Cancelled, Rescheduled or New Booking"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sends Confirmation Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Tool Call or Post Call Analysis": {
+      "main": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Searches Call Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Searches Call Records": {
+      "main": [
+        [
+          {
+            "node": "If User Cancelled, Rescheduled or New Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Analyser": {
+      "main": [
+        [
+          {
+            "node": "Sends Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sends Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Returns Name, Email, Phone Number & Start Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "main": [
+        [
+          {
+            "node": "Adds Parsed Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checks If Available": {
+      "main": [
+        [
+          {
+            "node": "If Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Available": {
+      "main": [
+        [
+          {
+            "node": "Available",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adds Parsed Transcript": {
+      "main": [
+        [
+          {
+            "node": "Checks If Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Returns Name, Email, Phone Number & Start Date": {
+      "main": [
+        [
+          {
+            "node": "Creates Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UserInfo": {
+      "ai_tool": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Analyser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Sends Confirmation Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "All Items into 1 Bundle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Items into 1 Bundle": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If Tool Call or Post Call Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "If User Cancelled, Rescheduled or New Booking",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendEmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Sends Cancelled Booking Confirmation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sends Cancelled Booking Confirmation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Sends Cancelled Booking Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Analyser",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sends Rescheduling Booking Confirmation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendEmail1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Sends Rescheduling Booking Confirmation1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sends Rescheduling Booking Confirmation1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If User Cancelled, Rescheduled or New Booking": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "48c2f84b-cbc5-4955-8c95-06049795969a",
+  "meta": {
+    "instanceId": "4a4d80652e161cddebda97dfcaa3a51c51f945330e1116cb985a16d6ad7a97eb"
+  },
+  "id": "gm4p6IpNCa1iLIUS",
+  "tags": []
+}
